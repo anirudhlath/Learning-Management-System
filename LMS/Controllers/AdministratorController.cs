@@ -58,7 +58,7 @@ namespace LMS.Controllers
         public IActionResult CreateDepartment(string subject, string name)
         {
 
-            bool newDepartment = false;
+            bool newDepartment = true;
 
             var query = from d in db.Departments select d;
 
@@ -70,18 +70,16 @@ namespace LMS.Controllers
                     // Department already exists
                     newDepartment = false;
                 }
+            }
 
-                else
-                {
-                    Department department = new Department();
-                    department.SubjectAbb = subject;
-                    department.Name = name;
+            if (newDepartment)
+            {
+                Department department = new Department();
+                department.SubjectAbb = subject;
+                department.Name = name;
 
-                    newDepartment = true;
-
-                    db.Departments.Add(department);
-                    db.SaveChanges();
-                }
+                db.Departments.Add(department);
+                db.SaveChanges();
             }
             
             return Json(new { success = newDepartment});
@@ -164,7 +162,7 @@ namespace LMS.Controllers
         /// 
         public IActionResult CreateCourse(string subject, int number, string name)
         {
-            bool newCourse = false;
+            bool newCourse = true;
 
             var query = from c in db.Courses select c;
 
@@ -176,18 +174,16 @@ namespace LMS.Controllers
                     // Course already exists
                     newCourse = false;
                 }
+            }
 
-                else
-                {
-                    Course course = new Course();
-                    course.SubjectAbb = subject;
-                    course.CourseName = name;
+            if (newCourse)
+            {
+                Course course = new Course();
+                course.SubjectAbb = subject;
+                course.CourseName = name;
 
-                    newCourse = true;
-
-                    db.Courses.Add(course);
-                    db.SaveChanges();
-                }
+                db.Courses.Add(course);
+                db.SaveChanges();
             }
 
             return Json(new { success = newCourse });
@@ -216,7 +212,7 @@ namespace LMS.Controllers
         /// 
         public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
         {
-            bool newClass = false;
+            bool addClassToDB = true;
 
             var query = from cl in db.Classes select cl;
 
@@ -237,27 +233,25 @@ namespace LMS.Controllers
                 )
                 {
                     // Class already exists
-                    newClass = false;
-                }
-
-                else
-                {
-                    Class new_class = new Class();
-
-                    new_class.Location = location;
-                    new_class.StartTime = TimeOnly.FromDateTime(start);
-                    new_class.EndTime = TimeOnly.FromDateTime(end);
-                    new_class.Semester = season;
-                    new_class.CatalogId = catalogID;
-
-                    newClass = true;
-
-                    db.Classes.Add(new_class);
-                    db.SaveChanges();
+                    addClassToDB = false;
                 }
             }
 
-            return Json(new { success = newClass });
+            if (addClassToDB)
+            {
+                Class new_class = new Class();
+
+                new_class.Location = location;
+                new_class.StartTime = TimeOnly.FromDateTime(start);
+                new_class.EndTime = TimeOnly.FromDateTime(end);
+                new_class.Semester = season;
+                new_class.CatalogId = catalogID;
+
+                db.Classes.Add(new_class);
+                db.SaveChanges();
+            }
+
+            return Json(new { success = addClassToDB });
 
 
         /*******End code to modify********/
