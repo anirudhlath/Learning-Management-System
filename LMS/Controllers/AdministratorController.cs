@@ -46,10 +46,13 @@ namespace LMS.Controllers
         /// <summary>
         /// Create a department which is uniquely identified by it's subject code
         /// </summary>
+        /// 
         /// <param name="subject">the subject code</param>
         /// <param name="name">the full name of the department</param>
+        /// 
         /// <returns>A JSON object containing {success = true/false}.
         /// false if the department already exists, true otherwise.</returns>
+        /// 
         public IActionResult CreateDepartment(string subject, string name)
         {
 
@@ -90,12 +93,23 @@ namespace LMS.Controllers
         /// "number" - The course number (as in 5530)
         /// "name" - The course name (as in "Database Systems")
         /// </summary>
+        /// 
         /// <param name="subjCode">The department subject abbreviation (as in "CS")</param>
+        /// 
         /// <returns>The JSON result</returns>
+        /// 
         public IActionResult GetCourses(string subject)
         {
-            
-            return Json(null);
+
+            var query = from c in db.Courses
+                        where c.SubjectAbb == subject
+                        select new
+                        {
+                            number = c.CourseNumber,
+                            name = c.CourseName
+                        };
+
+            return Json(query.ToArray());
         }
 
         /// <summary>
