@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -58,7 +59,6 @@ namespace LMS.Controllers
         {
 
             bool newDepartment = false;
-            bool addDepartment = true;
 
             var query = from d in db.Departments select d;
 
@@ -68,7 +68,7 @@ namespace LMS.Controllers
                 if (departments.SubjectAbb == subject && departments.Name == name)
                 {
                     // Department already exists
-                    addDepartment = false;
+                    newDepartment = false;
                 }
 
                 else
@@ -132,13 +132,16 @@ namespace LMS.Controllers
         public IActionResult GetProfessors(string subject)
         {
             var query = from p in db.Professors
-                        where p.SubjectAbbs.Any(dept => dept.Name == subject)
+                        //where p.SubjectAbbs.Any(dept => dept.Name == subject)
+                        join u in db.Users on p.UId equals u.UId
+                        into leftSide
 
+                        from l in leftSide
                         select new
                         {
-                            lname = p.Lname,
-                            fname = p.Fname,
-                            uid = p.UId
+                            lname = l.LastName,
+                            fname = l.FirstName,
+                            uid = l.UId
                         };
 
             return Json(query.ToArray());
@@ -162,7 +165,6 @@ namespace LMS.Controllers
         public IActionResult CreateCourse(string subject, int number, string name)
         {
             bool newCourse = false;
-            bool addCourse = true;
 
             var query = from c in db.Courses select c;
 
@@ -172,7 +174,7 @@ namespace LMS.Controllers
                 if (courses.SubjectAbb == subject && courses.CourseName == name && courses.CourseNumber == number.ToString())
                 {
                     // Course already exists
-                    addCourse = false;
+                    newCourse = false;
                 }
 
                 else
@@ -196,6 +198,7 @@ namespace LMS.Controllers
         /// <summary>
         /// Creates a class offering of a given course.
         /// </summary>
+        /// 
         /// <param name="subject">The department subject abbreviation</param>
         /// <param name="number">The course number</param>
         /// <param name="season">The season part of the semester</param>
@@ -204,15 +207,57 @@ namespace LMS.Controllers
         /// <param name="end">The end time</param>
         /// <param name="location">The location</param>
         /// <param name="instructor">The uid of the professor</param>
+        /// 
         /// <returns>A JSON object containing {success = true/false}. 
         /// false if another class occupies the same location during any time 
         /// within the start-end range in the same semester, or if there is already
         /// a Class offering of the same Course in the same Semester,
         /// true otherwise.</returns>
+        /// 
         public IActionResult CreateClass(string subject, int number, string season, int year, DateTime start, DateTime end, string location, string instructor)
-        {            
-            return Json(new { success = false});
-        }
+        {
+            bool newClass = false;
+
+            var query = from cl in db.Classes select cl;
+
+            var catalogID = (from co in db.Courses
+                             where co.SubjectAbb == subject
+                             where co.CourseNumber == number.ToString()
+                             select co.CatalogId).FirstOrDefault();
+
+            foreach (var cl in query)
+            {
+                if (
+                    // Class has a clashing location
+                    (cl.Location.Equals(location) && TimeSpan.Compare(cl.StartTime.ToTimeSpan(), start.TimeOfDay) >= 0 &&
+                    TimeSpan.Compare(cl.StartTime.ToTimeSpan(), end.TimeOfDay) <= 0 && cl.Semester.Equals(season))
+                    ||
+                    // Class has already been defined
+                    (cl.Semester.Equals(season) && cl.CatalogId == catalogID)
+                )
+                {
+                    // Class already exists
+                    newClass = false;
+                }
+
+                else
+                {
+                    Class new_class = new Class();
+
+                    new_class.Location = location;
+                    new_class.StartTime = TimeOnly.FromDateTime(start);
+                    new_class.EndTime = TimeOnly.FromDateTime(end);
+                    new_class.Semester = season;
+                    new_class.CatalogId = catalogID;
+
+                    newClass = true;
+
+                    db.Classes.Add(new_class);
+                    db.SaveChanges();
+                }
+            }
+
+            return Json(new { success = newClass });
 
 
         /*******End code to modify********/
