@@ -64,20 +64,40 @@ namespace LMS.Controllers
         /*******Begin code to modify********/
 
         /// <summary>
+        /// 
         /// Returns a JSON array of the classes the given student is enrolled in.
+        /// 
         /// Each object in the array should have the following fields:
+        /// 
         /// "subject" - The subject abbreviation of the class (such as "CS")
         /// "number" - The course number (such as 5530)
         /// "name" - The course name
         /// "season" - The season part of the semester
         /// "year" - The year part of the semester
         /// "grade" - The grade earned in the class, or "--" if one hasn't been assigned
+        /// 
         /// </summary>
+        /// 
         /// <param name="uid">The uid of the student</param>
+        /// 
         /// <returns>The JSON array</returns>
+        /// 
         public IActionResult GetMyClasses(string uid)
-        {           
-            return Json(null);
+        {
+            var query = from e in db.Enrollments
+                        join c in db.Courses on e.CatalogId equals c.CatalogId
+
+                        select new
+                        {
+                            subject = c.SubjectAbb,
+                            number = c.CourseNumber,
+                            name = c.CourseName,
+                            season = e.Semester,
+                            grade = e.Grade
+                        };
+
+
+            return Json(query.ToArray());
         }
 
         /// <summary>
