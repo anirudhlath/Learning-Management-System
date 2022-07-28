@@ -151,14 +151,44 @@ namespace LMS.Controllers
         /// Creates a course.
         /// A course is uniquely identified by its number + the subject to which it belongs
         /// </summary>
+        /// 
         /// <param name="subject">The subject abbreviation for the department in which the course will be added</param>
         /// <param name="number">The course number</param>
         /// <param name="name">The course name</param>
+        /// 
         /// <returns>A JSON object containing {success = true/false}.
         /// false if the course already exists, true otherwise.</returns>
+        /// 
         public IActionResult CreateCourse(string subject, int number, string name)
-        {           
-            return Json(new { success = false });
+        {
+            bool newCourse = false;
+            bool addCourse = true;
+
+            var query = from c in db.Courses select c;
+
+            foreach (var courses in query)
+            {
+                //Check if Course already exists
+                if (courses.SubjectAbb == subject && courses.CourseName == name && courses.CourseNumber == number.ToString())
+                {
+                    // Course already exists
+                    addCourse = false;
+                }
+
+                else
+                {
+                    Course course = new Course();
+                    course.SubjectAbb = subject;
+                    course.CourseName = name;
+
+                    newCourse = true;
+
+                    db.Courses.Add(course);
+                    db.SaveChanges();
+                }
+            }
+
+            return Json(new { success = newCourse });
         }
 
 
