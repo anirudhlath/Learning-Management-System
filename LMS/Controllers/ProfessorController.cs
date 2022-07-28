@@ -17,9 +17,9 @@ namespace LMS_CustomIdentity.Controllers
 
         //If your context is named something else, fix this
         //and the constructor param
-        private readonly lmsContext db;
+        private readonly LMSContext db;
 
-        public ProfessorController(lmsContext _db)
+        public ProfessorController(LMSContext _db)
         {
             db = _db;
         }

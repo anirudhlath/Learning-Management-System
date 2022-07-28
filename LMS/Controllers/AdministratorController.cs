@@ -15,9 +15,9 @@ namespace LMS.Controllers
 
         //If your context class is named something different,
         //fix this member var and the constructor param
-        private readonly lmsContext db;
+        private readonly LMSContext db;
 
-        public AdministratorController(lmsContext _db)
+        public AdministratorController(LMSContext _db)
         {
             db = _db;
         }

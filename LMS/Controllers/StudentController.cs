@@ -15,8 +15,8 @@ namespace LMS.Controllers
     {
         //If your context is named something else, fix this and the
         //constructor param
-        private lmsContext db;
-        public StudentController(lmsContext _db)
+        private LMSContext db;
+        public StudentController(LMSContext _db)
         {
             db = _db;
         }

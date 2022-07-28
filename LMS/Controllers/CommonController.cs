@@ -14,9 +14,9 @@ namespace LMS.Controllers
     {
         //If your context class is named differently, fix this
         //and the constructor parameter
-        private readonly lmsContext db;
+        private readonly LMSContext db;
 
-        public CommonController(lmsContext _db)
+        public CommonController(LMSContext _db)
         {
             db = _db;
         }
