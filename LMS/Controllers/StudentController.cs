@@ -124,9 +124,31 @@ namespace LMS.Controllers
         /// 
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
         {
-            var query = from 
+            var query = from co in db.Courses
+                        join asc in db.AssignmentCategories on co.CatalogId equals asc.CatalogId
+                        join ass in db.Assignments on asc.CategoryId equals ass.CategoryId
+                        where co.CourseNumber == num.ToString()
+                        where asc.Semester == season
 
-            return Json(null);
+                        select new
+                        {
+                            aname = ass.Name,
+                            cname = asc.Name,
+                            due = ass.DueDateTime,
+                            score = from sub in db.Submissions
+                                    where sub.UId == uid.ToString()
+                                    //TODO : fix course catalog id == submission section ?
+                                    where co.CatalogId == sub.Section.ToString()
+                                    select sub.Score
+                        };
+
+            var result = new List<object>();
+            foreach (var assignment in query)
+            {
+                result.Add(new { assignment.aname, assignment.cname, assignment.due, score = (assignment.score.Any() ? assignment.score : null) });
+            }
+
+            return Json(result);
         }
 
 
