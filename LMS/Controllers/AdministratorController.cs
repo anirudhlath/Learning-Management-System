@@ -253,6 +253,7 @@ namespace LMS.Controllers
 
             return Json(new { success = addClassToDB });
 
+        }
 
         /*******End code to modify********/
 
