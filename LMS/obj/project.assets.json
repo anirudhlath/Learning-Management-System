@@ -9498,11 +9498,16 @@
     ]
   },
   "packageFolders": {
+<<<<<<< Updated upstream
     "/Users/polinalyubavina/.nuget/packages/": {}
+=======
+    "/Users/anirudhlath/.nuget/packages/": {}
+>>>>>>> Stashed changes
   },
   "project": {
     "version": "1.0.0",
     "restore": {
+<<<<<<< Updated upstream
       "projectUniqueName": "/Users/polinalyubavina/6016/Project/Phase3/LMS/LMS.csproj",
       "projectName": "LMS",
       "projectPath": "/Users/polinalyubavina/6016/Project/Phase3/LMS/LMS.csproj",
@@ -9511,6 +9516,16 @@
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/polinalyubavina/.nuget/NuGet/NuGet.Config"
+=======
+      "projectUniqueName": "/Users/anirudhlath/code/msd/6016Project/LMS/LMS.csproj",
+      "projectName": "LMS",
+      "projectPath": "/Users/anirudhlath/code/msd/6016Project/LMS/LMS.csproj",
+      "packagesPath": "/Users/anirudhlath/.nuget/packages/",
+      "outputPath": "/Users/anirudhlath/code/msd/6016Project/LMS/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/Users/anirudhlath/.nuget/NuGet/NuGet.Config"
+>>>>>>> Stashed changes
       ],
       "originalTargetFrameworks": [
         "net6.0"
@@ -9572,8 +9587,12 @@
           "net47",
           "net471",
           "net472",
+<<<<<<< Updated upstream
           "net48",
           "net481"
+=======
+          "net48"
+>>>>>>> Stashed changes
         ],
         "assetTargetFallback": true,
         "warn": true,
@@ -9585,7 +9604,11 @@
             "privateAssets": "all"
           }
         },
+<<<<<<< Updated upstream
         "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/6.0.400-preview.22330.6/RuntimeIdentifierGraph.json"
+=======
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/6.0.301/RuntimeIdentifierGraph.json"
+>>>>>>> Stashed changes
       }
     }
   }
