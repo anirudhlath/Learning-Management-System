@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -89,9 +90,11 @@ namespace LMS.Controllers
 
         /// <summary>
         /// Returns a JSON array of all the courses in the given department.
+        /// 
         /// Each object in the array should have the following fields:
         /// "number" - The course number (as in 5530)
         /// "name" - The course name (as in "Database Systems")
+        /// 
         /// </summary>
         /// 
         /// <param name="subjCode">The department subject abbreviation (as in "CS")</param>
@@ -114,17 +117,31 @@ namespace LMS.Controllers
 
         /// <summary>
         /// Returns a JSON array of all the professors working in a given department.
+        /// 
         /// Each object in the array should have the following fields:
         /// "lname" - The professor's last name
         /// "fname" - The professor's first name
         /// "uid" - The professor's uid
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The department subject abbreviation</param>
+        /// 
         /// <returns>The JSON result</returns>
+        /// 
         public IActionResult GetProfessors(string subject)
         {
-            
-            return Json(null);
+            var query = from p in db.Professors
+                        where p.SubjectAbbs.Any(dept => dept.Name == subject)
+
+                        select new
+                        {
+                            lname = p.Lname,
+                            fname = p.Fname,
+                            uid = p.UId
+                        };
+
+            return Json(query.ToArray());
             
         }
 
