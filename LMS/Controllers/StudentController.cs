@@ -86,6 +86,7 @@ namespace LMS.Controllers
         {
             var query = from e in db.Enrollments
                         join c in db.Courses on e.CatalogId equals c.CatalogId
+                        where e.UId == uid
 
                         select new
                         {
@@ -101,21 +102,30 @@ namespace LMS.Controllers
         }
 
         /// <summary>
+        /// 
         /// Returns a JSON array of all the assignments in the given class that the given student is enrolled in.
+        ///
         /// Each object in the array should have the following fields:
+        /// 
         /// "aname" - The assignment name
         /// "cname" - The category name that the assignment belongs to
         /// "due" - The due Date/Time
         /// "score" - The score earned by the student, or null if the student has not submitted to this assignment.
+        ///
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="uid"></param>
+        /// 
         /// <returns>The JSON array</returns>
+        /// 
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
-        {            
+        {
+            var query = from 
+
             return Json(null);
         }
 
