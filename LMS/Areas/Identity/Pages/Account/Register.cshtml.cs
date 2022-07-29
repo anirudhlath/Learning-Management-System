@@ -44,7 +44,7 @@ namespace LMS.Areas.Identity.Pages.Account
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            LMSContext db
+            LMSContext _db
             /*IEmailSender emailSender*/)
         {
             _userManager = userManager;
@@ -52,7 +52,7 @@ namespace LMS.Areas.Identity.Pages.Account
             //_emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
-            this.db = db;
+            db = _db;
             //_emailSender = emailSender;
         }
         
@@ -112,7 +112,7 @@ namespace LMS.Areas.Identity.Pages.Account
             [Required]
             [Display(Name = "Date of Birth")]
             [DataType(DataType.Date)]
-            public DateOnly DOB { get; set; }
+            public DateTime DOB { get; set; }
 
             [Required]
             //[StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
@@ -198,7 +198,7 @@ namespace LMS.Areas.Identity.Pages.Account
         /// <param name="DOB"></param>
         /// <param name="departmentAbbrev"></param>
         /// <param name="role"></param>
-        string CreateNewUser(string firstName, string lastName, DateOnly DOB, string departmentAbbrev, string role)
+        string CreateNewUser(string firstName, string lastName, DateTime DOB, string departmentAbbrev, string role)
         {
             uint num = 1;
             
@@ -206,39 +206,69 @@ namespace LMS.Areas.Identity.Pages.Account
             if (db.Users.Any())
             {
                 var last = db.Users.Last(); // Check last entry
-                var uid = Int32.Parse(last.UId.Remove(0,1)); // Remove the 'u'
+                var uid = uint.Parse(last.UId.Remove(0,1)); // Remove the 'u'
                 if (uid > 9999999) // Check if there is no space for more users
                 {
                     Console.WriteLine("Database full.");
+                    return null;
                 }
 
-                num += (uint) uid;
+                num += uid;
             }
             
             // Prepare string format
-            string fmt = "u0000000";
-            var userID = num.ToString(fmt);
+            const string fmt = "u0000000";
+            var userId = num.ToString(fmt);
             
             var user = new User
             {
-                UId = userID,
+                UId = userId,
                 FirstName = firstName,
                 LastName = lastName,
                 Dob = DOB
             };
-
-            db.Users.Add(user);
+            
 
             if (role.ToLower() == "student")
             {
-                var student = new Student();
-                student.UId = userID;
-                // student.StudentMajorsIn
+                var student = new Student
+                {
+                    UId = userId,
+                    Major = departmentAbbrev
+                };
+                user.Student = student;
+                db.Users.Add(user);
+                db.Students.Add(student);
+            }
+            else if (role.ToLower() == "professor")
+            {
+                var professor = new Professor
+                {
+                    UId = userId,
+                    SubjectAbb = departmentAbbrev
+                };
+                user.Professor = professor;
+                db.Users.Add(user);
+                db.Professors.Add(professor);
+            }
+            else if (role.ToLower() == "administrator")
+            {
+                var administrator = new Administrator
+                {
+                    UId = userId
+                };
+                user.Administrator = administrator;
+                db.Users.Add(user);
+                db.Administrators.Add(administrator);
+            }
+            else
+            {
+                Console.WriteLine("Invalid Role.");
+                return null;
             }
 
-
-            //TODO FILL ME IN
-            return "ASDF";
+            db.SaveChanges();
+            return userId;
         }
 
         /*******End code to modify********/

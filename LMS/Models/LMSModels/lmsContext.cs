@@ -392,7 +392,9 @@ namespace LMS.Models.LMSModels
                     .HasColumnName("uID")
                     .IsFixedLength();
 
-                entity.Property(e => e.Dob).HasColumnName("DOB");
+                entity.Property(e => e.Dob)
+                    .HasColumnType("datetime")
+                    .HasColumnName("DOB");
 
                 entity.Property(e => e.FirstName)
                     .HasMaxLength(100)

@@ -8,7 +8,7 @@ namespace LMS.Models.LMSModels
         public string UId { get; set; } = null!;
         public string FirstName { get; set; } = null!;
         public string LastName { get; set; } = null!;
-        public DateOnly Dob { get; set; }
+        public DateTime Dob { get; set; }
 
         public virtual Administrator Administrator { get; set; } = null!;
         public virtual Professor Professor { get; set; } = null!;
