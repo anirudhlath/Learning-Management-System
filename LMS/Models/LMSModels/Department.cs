@@ -8,16 +8,15 @@ namespace LMS.Models.LMSModels
         public Department()
         {
             Courses = new HashSet<Course>();
-            StudentMajorsIns = new HashSet<StudentMajorsIn>();
-            UIds = new HashSet<Professor>();
+            Professors = new HashSet<Professor>();
+            Students = new HashSet<Student>();
         }
 
         public string Name { get; set; } = null!;
         public string SubjectAbb { get; set; } = null!;
 
         public virtual ICollection<Course> Courses { get; set; }
-        public virtual ICollection<StudentMajorsIn> StudentMajorsIns { get; set; }
-
-        public virtual ICollection<Professor> UIds { get; set; }
+        public virtual ICollection<Professor> Professors { get; set; }
+        public virtual ICollection<Student> Students { get; set; }
     }
 }

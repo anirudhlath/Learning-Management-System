@@ -5,13 +5,15 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
 using LMS.Models;
-
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -29,6 +31,10 @@ namespace LMS.Areas.Identity.Pages.Account
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserStore<ApplicationUser> _userStore;
+
+        private readonly LMSContext db;
+
+        private int userCount = 1;
         //private readonly IUserEmailStore<IdentityUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
         //private readonly IEmailSender _emailSender;
@@ -37,7 +43,8 @@ namespace LMS.Areas.Identity.Pages.Account
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<RegisterModel> logger
+            ILogger<RegisterModel> logger,
+            LMSContext db
             /*IEmailSender emailSender*/)
         {
             _userManager = userManager;
@@ -45,8 +52,10 @@ namespace LMS.Areas.Identity.Pages.Account
             //_emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
+            this.db = db;
             //_emailSender = emailSender;
         }
+        
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -103,7 +112,7 @@ namespace LMS.Areas.Identity.Pages.Account
             [Required]
             [Display(Name = "Date of Birth")]
             [DataType(DataType.Date)]
-            public System.DateTime DOB { get; set; }
+            public DateOnly DOB { get; set; }
 
             [Required]
             //[StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
@@ -189,8 +198,44 @@ namespace LMS.Areas.Identity.Pages.Account
         /// <param name="DOB"></param>
         /// <param name="departmentAbbrev"></param>
         /// <param name="role"></param>
-        string CreateNewUser(string firstName, string lastName, DateTime DOB, string departmentAbbrev, string role)
+        string CreateNewUser(string firstName, string lastName, DateOnly DOB, string departmentAbbrev, string role)
         {
+            uint num = 1;
+            
+            // Check if database has entries
+            if (db.Users.Any())
+            {
+                var last = db.Users.Last(); // Check last entry
+                var uid = Int32.Parse(last.UId.Remove(0,1)); // Remove the 'u'
+                if (uid > 9999999) // Check if there is no space for more users
+                {
+                    Console.WriteLine("Database full.");
+                }
+
+                num += (uint) uid;
+            }
+            
+            // Prepare string format
+            string fmt = "u0000000";
+            var userID = num.ToString(fmt);
+            
+            var user = new User
+            {
+                UId = userID,
+                FirstName = firstName,
+                LastName = lastName,
+                Dob = DOB
+            };
+
+            db.Users.Add(user);
+
+            if (role.ToLower() == "student")
+            {
+                var student = new Student();
+                student.UId = userID;
+                // student.StudentMajorsIn
+            }
+
 
             //TODO FILL ME IN
             return "ASDF";

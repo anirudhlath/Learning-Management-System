@@ -12,9 +12,10 @@ namespace LMS.Models.LMSModels
         }
 
         public string UId { get; set; } = null!;
+        public string Major { get; set; } = null!;
 
+        public virtual Department MajorNavigation { get; set; } = null!;
         public virtual User UIdNavigation { get; set; } = null!;
-        public virtual StudentMajorsIn StudentMajorsIn { get; set; } = null!;
         public virtual ICollection<Enrollment> Enrollments { get; set; }
         public virtual ICollection<Submission> Submissions { get; set; }
     }

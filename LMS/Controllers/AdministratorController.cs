@@ -226,10 +226,10 @@ namespace LMS.Controllers
                 if (
                     // Class has a clashing location
                     (cl.Location.Equals(location) && TimeSpan.Compare(cl.StartTime.ToTimeSpan(), start.TimeOfDay) >= 0 &&
-                    TimeSpan.Compare(cl.StartTime.ToTimeSpan(), end.TimeOfDay) <= 0 && cl.Semester.Equals(season))
+                    TimeSpan.Compare(cl.StartTime.ToTimeSpan(), end.TimeOfDay) <= 0 && cl.Season.Equals(season))
                     ||
                     // Class has already been defined
-                    (cl.Semester.Equals(season) && cl.CatalogId == catalogID)
+                    (cl.Season.Equals(season) && cl.CatalogId == catalogID)
                 )
                 {
                     // Class already exists
@@ -244,7 +244,7 @@ namespace LMS.Controllers
                 new_class.Location = location;
                 new_class.StartTime = TimeOnly.FromDateTime(start);
                 new_class.EndTime = TimeOnly.FromDateTime(end);
-                new_class.Semester = season;
+                new_class.Season = season;
                 new_class.CatalogId = catalogID;
 
                 db.Classes.Add(new_class);
