@@ -129,21 +129,24 @@ namespace LMS.Controllers
         /// 
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
         {
-            var query = from co in db.Courses
-                        join asc in db.AssignmentCategories on co.CatalogId equals asc.CatalogId
+            var query = from c in db.Classes
+                        join asc in db.AssignmentCategories on c.ClassId equals asc.ClassId
                         join ass in db.Assignments on asc.CategoryId equals ass.CategoryId
+                        join co in db.Courses on c.CatalogId equals co.CatalogId
+                        join e in db.Enrollments on c.ClassId equals e.ClassId
                         where co.CourseNumber == num.ToString()
-                        where asc.Semester == season
-
+                        where string.Equals(c.Season, season, StringComparison.CurrentCultureIgnoreCase)
+                        where c.Year == year
+                        where string.Equals(e.UId.ToLower(), uid.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                        where string.Equals(co.SubjectAbb.ToLower(), subject.ToLower(), StringComparison.CurrentCultureIgnoreCase)
                         select new
                         {
                             aname = ass.Name,
                             cname = asc.Name,
                             due = ass.DueDateTime,
                             score = from sub in db.Submissions
-                                    where sub.UId == uid.ToString()
-                                    //TODO : fix course catalog id == submission section ?
-                                    where co.CatalogId == sub.Section.ToString()
+                                    where string.Equals(sub.UId.ToLower(), uid.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                                    where c.ClassId == sub.ClassId
                                     select sub.Score
                         };
 
