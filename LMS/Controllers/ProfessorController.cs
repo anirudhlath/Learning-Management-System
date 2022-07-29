@@ -357,6 +357,7 @@ namespace LMS_CustomIdentity.Controllers
                             name = asscat.Name
                         };
 
+            //if category already exists
             if (query.Count() > 0)
             {
                 // do nothing
@@ -403,6 +404,7 @@ namespace LMS_CustomIdentity.Controllers
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="category">The name of the assignment category in the class</param>
+        /// 
         /// <param name="asgname">The new assignment name</param>
         /// <param name="asgpoints">The max point value for the new assignment</param>
         /// <param name="asgdue">The due DateTime for the new assignment</param>
@@ -410,11 +412,59 @@ namespace LMS_CustomIdentity.Controllers
         /// 
         /// <returns>A JSON object containing success = true/false</returns>
         /// 
-        public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
+        public IActionResult CreateAssignment(string subject, int num, string season, int year,
+            string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
         {
+            bool createdAssignment = false;
 
+            var query = from cl in db.Classes
 
-            return Json(new { success = false });
+                        join asscat in db.AssignmentCategories
+                        on cl.ClassId equals asscat.ClassId
+
+                        join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+
+                        join ass in db.Assignments
+                        on asscat.CategoryId equals ass.CategoryId
+
+                        where co.SubjectAbb == subject
+                        where co.CourseNumber == num.ToString()
+                        where cl.Season == season
+                        where cl.Year == year
+                        where asscat.Name == category
+
+                        select new
+                        {
+                            asgname = asscat.Name,
+                            asgpoints = ass.MaxPoints,
+                            asgdue = ass.DueDateTime,
+                            asgcontents = ass.Content
+                        };
+
+            //if assignment already exists
+            if (query.Count() > 0)
+            {
+                // do nothing
+                createdAssignment = false;
+            }
+
+            else
+            {
+                Assignment newAssign = new Assignment();
+
+                newAssign.Name = asgname;
+                newAssign.MaxPoints = (uint)asgpoints;
+                newAssign.DueDateTime = asgdue;
+                newAssign.Content = asgcontents;
+
+                db.Assignments.Add(newAssign);
+                db.SaveChanges();
+
+                createdAssignment = true;
+            }
+
+            return Json(new { success = createdAssignment });
         }
 
 
@@ -426,7 +476,6 @@ namespace LMS_CustomIdentity.Controllers
         /// "uid" - user ID
         /// "time" - DateTime of the submission
         /// "score" - The score given to the submission
-        /// 
         /// </summary>
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
@@ -442,8 +491,11 @@ namespace LMS_CustomIdentity.Controllers
 
 
         /// <summary>
+        /// 
         /// Set the score of an assignment submission
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
@@ -452,7 +504,9 @@ namespace LMS_CustomIdentity.Controllers
         /// <param name="asgname">The name of the assignment</param>
         /// <param name="uid">The uid of the student who's submission is being graded</param>
         /// <param name="score">The new score for the submission</param>
+        /// 
         /// <returns>A JSON object containing success = true/false</returns>
+        /// 
         public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
         {
             return Json(new { success = false });
@@ -476,7 +530,13 @@ namespace LMS_CustomIdentity.Controllers
         }
 
 
-        
+        /// helper function
+        public IActionResult Autograder(  )
+        {
+
+            return Json(null);
+        }
+
         /*******End code to modify********/
     }
 }
