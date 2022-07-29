@@ -197,6 +197,7 @@ namespace LMS.Controllers
                                     join asscat in db.AssignmentCategories
                                     on c.ClassId equals asscat.ClassId
                                     join ass in db.Assignments
+                                    //CHECK: is this selecting right?
                                     on asscat.CategoryId equals ass.CategoryId
 
                                     where co.SubjectAbb == subject
@@ -209,7 +210,7 @@ namespace LMS.Controllers
                                     select ass).FirstOrDefault();
 
             var query_submission = (from sub in db.Submissions
-                                    //TODO: check if submission id is the equivalent of assignment id
+                                    //CHECK: check if submission id is the equivalent of assignment id
                                     where sub.SubmissionId == query_assignment.AssignmentId
                                     select sub).FirstOrDefault();
 
@@ -223,7 +224,7 @@ namespace LMS.Controllers
                 subm.Score = 0;
                 subm.SubmissionContents = contents;
                 subm.UId = uid;
-                //TODO: may be a good idea to set submission id = to assignment id so they're connected that way
+                //CHECK: may be a good idea to set submission id = to assignment id so they're connected that way
                 subm.SubmissionId = query_assignment.AssignmentId;
 
                 //add to database
