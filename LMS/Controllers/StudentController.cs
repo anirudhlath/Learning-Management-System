@@ -265,7 +265,42 @@ namespace LMS.Controllers
         {
             bool studentEnrolled = false;
 
+            var check_enrollment = (from e in db.Enrollments
 
+                                    join cl in db.Classes
+                                    on e.ClassId equals cl.ClassId
+
+                                    join co in db.Courses
+                                    on cl.CatalogId equals co.CatalogId
+
+                                    where e.UId == uid
+                                    where co.SubjectAbb == subject
+                                    where co.CourseNumber == num.ToString()
+                                    where cl.Season == season
+                                    where cl.Year == year
+
+                                    select e).FirstOrDefault();
+
+            if (check_enrollment == null)
+            {
+                Enrollment enrollStudent = new Enrollment();
+
+                enrollStudent.UId = uid;
+                //set grade to be equal to null that will look good in the table ( -- )
+                enrollStudent.Grade = "--";
+                enrollStudent.ClassId = check_enrollment.ClassId;
+
+                studentEnrolled = true;
+
+                db.Enrollments.Add(enrollStudent);
+                db.SaveChanges(); 
+            }
+
+            //else student is already enrolled
+            else
+            {
+                studentEnrolled = false; 
+            }
 
             return Json(new { success = studentEnrolled});
         }
