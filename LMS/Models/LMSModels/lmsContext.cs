@@ -25,7 +25,6 @@ namespace LMS.Models.LMSModels
         public virtual DbSet<Enrollment> Enrollments { get; set; } = null!;
         public virtual DbSet<Professor> Professors { get; set; } = null!;
         public virtual DbSet<Student> Students { get; set; } = null!;
-        public virtual DbSet<StudentMajorsIn> StudentMajorsIns { get; set; } = null!;
         public virtual DbSet<Submission> Submissions { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
 
@@ -95,7 +94,6 @@ namespace LMS.Models.LMSModels
 
                 entity.HasOne(d => d.Category)
                     .WithMany(p => p.Assignments)
-                    .HasPrincipalKey(p => p.CategoryId)
                     .HasForeignKey(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("Assignment_ibfk_1");
@@ -103,76 +101,54 @@ namespace LMS.Models.LMSModels
 
             modelBuilder.Entity<AssignmentCategory>(entity =>
             {
-                entity.HasKey(e => new { e.CatalogId, e.Semester, e.Section, e.Name })
-                    .HasName("PRIMARY")
-                    .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0, 0, 0 });
+                entity.HasKey(e => e.CategoryId)
+                    .HasName("PRIMARY");
 
-                entity.HasIndex(e => e.CategoryId, "AssignmentCategories_categoryID_uindex")
+                entity.HasIndex(e => e.ClassId, "AssignmentCategories_Classes_classID_fk");
+
+                entity.HasIndex(e => new { e.Name, e.ClassId }, "AssignmentCategories_key")
                     .IsUnique();
-
-                entity.Property(e => e.CatalogId)
-                    .HasMaxLength(5)
-                    .HasColumnName("catalogID")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Semester)
-                    .HasMaxLength(11)
-                    .HasColumnName("semester");
-
-                entity.Property(e => e.Section)
-                    .HasColumnType("int(10) unsigned")
-                    .HasColumnName("section");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .HasColumnName("name");
 
                 entity.Property(e => e.CategoryId)
                     .HasColumnType("int(10) unsigned")
+                    .ValueGeneratedNever()
                     .HasColumnName("categoryID");
+
+                entity.Property(e => e.ClassId)
+                    .HasColumnType("int(10) unsigned")
+                    .HasColumnName("classID");
 
                 entity.Property(e => e.GradingWeight)
                     .HasColumnType("int(10) unsigned")
                     .HasColumnName("gradingWeight");
 
+                entity.Property(e => e.Name)
+                    .HasMaxLength(100)
+                    .HasColumnName("name");
+
                 entity.HasOne(d => d.Class)
                     .WithMany(p => p.AssignmentCategories)
-                    .HasForeignKey(d => new { d.CatalogId, d.Semester, d.Section })
+                    .HasForeignKey(d => d.ClassId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("AssignmentCategories_Classes_catalogID_semester_section_fk");
+                    .HasConstraintName("AssignmentCategories_Classes_classID_fk");
             });
 
             modelBuilder.Entity<Class>(entity =>
             {
-                entity.HasKey(e => new { e.CatalogId, e.Semester, e.Section })
-                    .HasName("PRIMARY")
-                    .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0, 0 });
+                entity.HasIndex(e => e.ProfessorUId, "Classes_Professors_uID_fk");
 
-                entity.HasIndex(e => e.ClassId, "Classes_pk")
+                entity.HasIndex(e => new { e.CatalogId, e.Season }, "catalogID")
                     .IsUnique();
 
-                entity.HasIndex(e => new { e.Location, e.StartTime }, "time_location")
-                    .IsUnique();
-
-                entity.HasIndex(e => new { e.Location, e.EndTime }, "time_location_2")
-                    .IsUnique();
+                entity.Property(e => e.ClassId)
+                    .HasColumnType("int(10) unsigned")
+                    .ValueGeneratedNever()
+                    .HasColumnName("classID");
 
                 entity.Property(e => e.CatalogId)
                     .HasMaxLength(5)
                     .HasColumnName("catalogID")
                     .IsFixedLength();
-
-                entity.Property(e => e.Semester)
-                    .HasMaxLength(11)
-                    .HasColumnName("semester");
-
-                entity.Property(e => e.Section)
-                    .HasColumnType("int(10) unsigned")
-                    .HasColumnName("section");
-
-                entity.Property(e => e.ClassId)
-                    .HasColumnType("int(10) unsigned")
-                    .HasColumnName("classID");
 
                 entity.Property(e => e.EndTime)
                     .HasColumnType("time")
@@ -182,15 +158,34 @@ namespace LMS.Models.LMSModels
                     .HasMaxLength(100)
                     .HasColumnName("location");
 
+                entity.Property(e => e.ProfessorUId)
+                    .HasMaxLength(8)
+                    .HasColumnName("professor_uID")
+                    .IsFixedLength();
+
+                entity.Property(e => e.Season)
+                    .HasMaxLength(6)
+                    .HasColumnName("season");
+
                 entity.Property(e => e.StartTime)
                     .HasColumnType("time")
                     .HasColumnName("startTime");
+
+                entity.Property(e => e.Year)
+                    .HasColumnType("int(10) unsigned")
+                    .HasColumnName("year");
 
                 entity.HasOne(d => d.Catalog)
                     .WithMany(p => p.Classes)
                     .HasForeignKey(d => d.CatalogId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("Classes_Courses_catalogID_fk");
+
+                entity.HasOne(d => d.ProfessorU)
+                    .WithMany(p => p.Classes)
+                    .HasForeignKey(d => d.ProfessorUId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Classes_Professors_uID_fk");
             });
 
             modelBuilder.Entity<Course>(entity =>
@@ -248,37 +243,38 @@ namespace LMS.Models.LMSModels
 
             modelBuilder.Entity<Enrollment>(entity =>
             {
-                entity.HasKey(e => new { e.UId, e.CatalogId, e.Semester })
+                entity.HasKey(e => new { e.UId, e.ClassId })
                     .HasName("PRIMARY")
-                    .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0, 0 });
+                    .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0 });
 
                 entity.ToTable("Enrollment");
 
-                entity.HasIndex(e => new { e.CatalogId, e.Semester }, "Students_ibfk_2");
+                entity.HasIndex(e => e.ClassId, "Enrollment_Classes_classID_fk");
 
                 entity.Property(e => e.UId)
                     .HasMaxLength(8)
                     .HasColumnName("uID")
                     .IsFixedLength();
 
-                entity.Property(e => e.CatalogId)
-                    .HasMaxLength(5)
-                    .HasColumnName("catalogID")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Semester)
-                    .HasMaxLength(11)
-                    .HasColumnName("semester");
+                entity.Property(e => e.ClassId)
+                    .HasColumnType("int(10) unsigned")
+                    .HasColumnName("classID");
 
                 entity.Property(e => e.Grade)
                     .HasMaxLength(2)
                     .HasColumnName("grade");
 
+                entity.HasOne(d => d.Class)
+                    .WithMany(p => p.Enrollments)
+                    .HasForeignKey(d => d.ClassId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Enrollment_Classes_classID_fk");
+
                 entity.HasOne(d => d.UIdNavigation)
                     .WithMany(p => p.Enrollments)
                     .HasForeignKey(d => d.UId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("Enrollment_ibfk_1");
+                    .HasConstraintName("Enrollment_Students_uID_fk");
             });
 
             modelBuilder.Entity<Professor>(entity =>
@@ -286,81 +282,7 @@ namespace LMS.Models.LMSModels
                 entity.HasKey(e => e.UId)
                     .HasName("PRIMARY");
 
-                entity.Property(e => e.UId)
-                    .HasMaxLength(8)
-                    .HasColumnName("uID")
-                    .IsFixedLength();
-
-                entity.HasOne(d => d.UIdNavigation)
-                    .WithOne(p => p.Professor)
-                    .HasForeignKey<Professor>(d => d.UId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("Professors_ibfk_1");
-
-                entity.HasMany(d => d.Classes)
-                    .WithMany(p => p.UIds)
-                    .UsingEntity<Dictionary<string, object>>(
-                        "ProfessorTeachesIn",
-                        l => l.HasOne<Class>().WithMany().HasPrincipalKey("ClassId").HasForeignKey("ClassId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("ProfessorTeachesIn_ibfk_2"),
-                        r => r.HasOne<Professor>().WithMany().HasForeignKey("UId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("ProfessorTeachesIn_ibfk_1"),
-                        j =>
-                        {
-                            j.HasKey("UId", "ClassId").HasName("PRIMARY").HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0 });
-
-                            j.ToTable("ProfessorTeachesIn");
-
-                            j.HasIndex(new[] { "ClassId" }, "classID");
-
-                            j.IndexerProperty<string>("UId").HasMaxLength(8).HasColumnName("uID").IsFixedLength();
-
-                            j.IndexerProperty<uint>("ClassId").HasColumnType("int(10) unsigned").HasColumnName("classID");
-                        });
-
-                entity.HasMany(d => d.SubjectAbbs)
-                    .WithMany(p => p.UIds)
-                    .UsingEntity<Dictionary<string, object>>(
-                        "ProfessorWorksIn",
-                        l => l.HasOne<Department>().WithMany().HasForeignKey("SubjectAbb").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("ProfessorWorksIn_ibfk_2"),
-                        r => r.HasOne<Professor>().WithMany().HasForeignKey("UId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("ProfessorWorksIn_ibfk_1"),
-                        j =>
-                        {
-                            j.HasKey("UId", "SubjectAbb").HasName("PRIMARY").HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0 });
-
-                            j.ToTable("ProfessorWorksIn");
-
-                            j.HasIndex(new[] { "SubjectAbb" }, "subjectAbb");
-
-                            j.IndexerProperty<string>("UId").HasMaxLength(8).HasColumnName("uID").IsFixedLength();
-
-                            j.IndexerProperty<string>("SubjectAbb").HasMaxLength(4).HasColumnName("subjectAbb").IsFixedLength();
-                        });
-            });
-
-            modelBuilder.Entity<Student>(entity =>
-            {
-                entity.HasKey(e => e.UId)
-                    .HasName("PRIMARY");
-
-                entity.Property(e => e.UId)
-                    .HasMaxLength(8)
-                    .HasColumnName("uID")
-                    .IsFixedLength();
-
-                entity.HasOne(d => d.UIdNavigation)
-                    .WithOne(p => p.Student)
-                    .HasForeignKey<Student>(d => d.UId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("Students_Users_uID_fk");
-            });
-
-            modelBuilder.Entity<StudentMajorsIn>(entity =>
-            {
-                entity.HasKey(e => e.UId)
-                    .HasName("PRIMARY");
-
-                entity.ToTable("StudentMajorsIn");
-
-                entity.HasIndex(e => e.SubjectAbb, "StudentMajorsIn_1_Departments_subjectAbb_fk");
+                entity.HasIndex(e => e.SubjectAbb, "Professors_Departments_subjectAbb_fk");
 
                 entity.Property(e => e.UId)
                     .HasMaxLength(8)
@@ -373,52 +295,66 @@ namespace LMS.Models.LMSModels
                     .IsFixedLength();
 
                 entity.HasOne(d => d.SubjectAbbNavigation)
-                    .WithMany(p => p.StudentMajorsIns)
+                    .WithMany(p => p.Professors)
                     .HasForeignKey(d => d.SubjectAbb)
-                    .HasConstraintName("StudentMajorsIn_1_Departments_subjectAbb_fk");
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Professors_Departments_subjectAbb_fk");
 
                 entity.HasOne(d => d.UIdNavigation)
-                    .WithOne(p => p.StudentMajorsIn)
-                    .HasForeignKey<StudentMajorsIn>(d => d.UId)
+                    .WithOne(p => p.Professor)
+                    .HasForeignKey<Professor>(d => d.UId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("StudentMajorsIn_1_Students_uID_fk");
+                    .HasConstraintName("Professors_ibfk_1");
             });
 
-            modelBuilder.Entity<Submission>(entity =>
+            modelBuilder.Entity<Student>(entity =>
             {
-                entity.HasKey(e => new { e.SubmissionId, e.UId, e.CatalogId, e.Semester })
-                    .HasName("PRIMARY")
-                    .HasAnnotation("MySql:IndexPrefixLength", new[] { 0, 0, 0, 0 });
+                entity.HasKey(e => e.UId)
+                    .HasName("PRIMARY");
 
-                entity.HasIndex(e => new { e.CatalogId, e.Semester, e.Section }, "catalogID");
-
-                entity.HasIndex(e => e.UId, "uID");
-
-                entity.Property(e => e.SubmissionId)
-                    .HasColumnType("int(10) unsigned")
-                    .HasColumnName("submissionID");
+                entity.HasIndex(e => e.Major, "Students_Departments_subjectAbb_fk");
 
                 entity.Property(e => e.UId)
                     .HasMaxLength(8)
                     .HasColumnName("uID")
                     .IsFixedLength();
 
-                entity.Property(e => e.CatalogId)
-                    .HasMaxLength(5)
-                    .HasColumnName("catalogID")
+                entity.Property(e => e.Major)
+                    .HasMaxLength(4)
+                    .HasColumnName("major")
                     .IsFixedLength();
 
-                entity.Property(e => e.Semester)
-                    .HasMaxLength(11)
-                    .HasColumnName("semester");
+                entity.HasOne(d => d.MajorNavigation)
+                    .WithMany(p => p.Students)
+                    .HasForeignKey(d => d.Major)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Students_Departments_subjectAbb_fk");
+
+                entity.HasOne(d => d.UIdNavigation)
+                    .WithOne(p => p.Student)
+                    .HasForeignKey<Student>(d => d.UId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Students_Users_uID_fk");
+            });
+
+            modelBuilder.Entity<Submission>(entity =>
+            {
+                entity.HasIndex(e => e.ClassId, "Submissions_ibfk_2");
+
+                entity.HasIndex(e => e.UId, "uID");
+
+                entity.Property(e => e.SubmissionId)
+                    .HasColumnType("int(10) unsigned")
+                    .ValueGeneratedNever()
+                    .HasColumnName("submissionID");
+
+                entity.Property(e => e.ClassId)
+                    .HasColumnType("int(10) unsigned")
+                    .HasColumnName("classID");
 
                 entity.Property(e => e.Score)
                     .HasColumnType("int(10) unsigned")
                     .HasColumnName("score");
-
-                entity.Property(e => e.Section)
-                    .HasColumnType("int(10) unsigned")
-                    .HasColumnName("section");
 
                 entity.Property(e => e.SubmissionContents)
                     .HasMaxLength(8192)
@@ -428,17 +364,22 @@ namespace LMS.Models.LMSModels
                     .HasColumnType("datetime")
                     .HasColumnName("submissionTime");
 
+                entity.Property(e => e.UId)
+                    .HasMaxLength(8)
+                    .HasColumnName("uID")
+                    .IsFixedLength();
+
+                entity.HasOne(d => d.Class)
+                    .WithMany(p => p.Submissions)
+                    .HasForeignKey(d => d.ClassId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Submissions_ibfk_2");
+
                 entity.HasOne(d => d.UIdNavigation)
                     .WithMany(p => p.Submissions)
                     .HasForeignKey(d => d.UId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("Submissions_ibfk_1");
-
-                entity.HasOne(d => d.Class)
-                    .WithMany(p => p.Submissions)
-                    .HasForeignKey(d => new { d.CatalogId, d.Semester, d.Section })
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("Submissions_ibfk_2");
             });
 
             modelBuilder.Entity<User>(entity =>

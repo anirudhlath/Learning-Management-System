@@ -8,14 +8,13 @@ namespace LMS.Models.LMSModels
         public Professor()
         {
             Classes = new HashSet<Class>();
-            SubjectAbbs = new HashSet<Department>();
         }
 
         public string UId { get; set; } = null!;
+        public string SubjectAbb { get; set; } = null!;
 
+        public virtual Department SubjectAbbNavigation { get; set; } = null!;
         public virtual User UIdNavigation { get; set; } = null!;
-
         public virtual ICollection<Class> Classes { get; set; }
-        public virtual ICollection<Department> SubjectAbbs { get; set; }
     }
 }
