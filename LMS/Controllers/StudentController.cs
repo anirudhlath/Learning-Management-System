@@ -164,6 +164,7 @@ namespace LMS.Controllers
         /// <summary>
         /// 
         /// Adds a submission to the given assignment for the given student
+        /// 
         /// The submission should use the current time as its DateTime
         /// You can get the current time with DateTime.Now
         /// 
@@ -188,9 +189,56 @@ namespace LMS.Controllers
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
         {
-            //var query = from 
+            var query_assignment = (from c in db.Classes
+                                    join co in db.Courses
+                                    on c.CatalogId equals co.CatalogId
+                                    join asscat in db.AssignmentCategories
+                                    on c.ClassId equals asscat.ClassId
+                                    join ass in db.Assignments
+                                    on asscat.CategoryId equals ass.CategoryId
 
-            return Json(new { success = false });
+                                    where co.SubjectAbb == subject
+                                    where co.CourseNumber == num.ToString()
+                                    where c.Season == season
+                                    where c.Year == year
+                                    where asscat.Name == category
+                                    where ass.Name == asgname
+
+                                    select ass).FirstOrDefault();
+
+            var query_submission = (from sub in db.Submissions
+                                    //TODO: check if submission id is the equivalent of assignment id
+                                    where sub.SubmissionId == query_assignment.AssignmentId
+                                    select sub).FirstOrDefault();
+
+            //if there has been no submission yet, set the submission
+            if (query_submission == null)
+            {
+                Submission subm = new Submission();
+
+                subm.SubmissionTime = DateTime.Now;
+                //set score to 0
+                subm.Score = 0;
+                subm.SubmissionContents = contents;
+                subm.UId = uid;
+                //TODO: may be a good idea to set submission id = to assignment id so they're connected that way
+                subm.SubmissionId = query_assignment.AssignmentId;
+
+                //add to database
+                db.Submissions.Add(subm);
+            }
+
+            //if the assignment has already been submitted once
+            else
+            {
+                query_submission.SubmissionContents = contents;
+                query_submission.SubmissionTime = DateTime.Now;
+            }
+
+            db.SaveChanges();
+
+            //always returns true
+            return Json(new { success = true });
         }
 
 
