@@ -314,24 +314,90 @@ namespace LMS_CustomIdentity.Controllers
         }
 
         /// <summary>
+        /// 
         /// Creates a new assignment category for the specified class.
+        /// 
         /// If a category of the given class with the given name already exists, return success = false.
+        ///
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="category">The new category name</param>
         /// <param name="catweight">The new category weight</param>
+        /// 
         /// <returns>A JSON object containing {success = true/false} </returns>
-        public IActionResult CreateAssignmentCategory(string subject, int num, string season, int year, string category, int catweight)
+        /// 
+        public IActionResult CreateAssignmentCategory(string subject, int num, string season, int year,
+            string category, int catweight)
         {
-            return Json(new { success = false });
+
+            bool createdCategory = false;
+
+            var query = from cl in db.Classes
+
+                        join asscat in db.AssignmentCategories
+                        on cl.ClassId equals asscat.ClassId
+
+                        join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+
+                        where co.SubjectAbb == subject
+                        where co.CourseNumber == num.ToString()
+                        where cl.Season == season
+                        where cl.Year == year
+                        where asscat.Name == category
+                        where asscat.GradingWeight == catweight
+
+                        select new
+                        {
+                            weight = asscat.GradingWeight,
+                            name = asscat.Name
+                        };
+
+            if (query.Count() > 0)
+            {
+                // do nothing
+                createdCategory = false;
+
+            }
+
+            else
+            {
+                var class_query = from cl in db.Classes
+                                  join co in db.Courses
+                                  on cl.CatalogId equals co.CatalogId
+                                  where co.SubjectAbb == subject
+                                  where co.CourseNumber == num.ToString()
+                                  where cl.Season == season
+                                  where cl.Year == year
+                                  select new
+                                  {
+                                      cl.ClassId
+                                  };
+
+                AssignmentCategory newAssignCat = new AssignmentCategory();
+
+                newAssignCat.GradingWeight = (uint)catweight;
+                newAssignCat.Name = category;
+                newAssignCat.ClassId = class_query.First().ClassId;
+
+                db.AssignmentCategories.Add(newAssignCat);
+                db.SaveChanges();
+
+                createdCategory = true;
+            }
+            return Json(new { success = createdCategory });
         }
 
         /// <summary>
+        /// 
         /// Creates a new assignment for the given class and category.
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
@@ -341,9 +407,13 @@ namespace LMS_CustomIdentity.Controllers
         /// <param name="asgpoints">The max point value for the new assignment</param>
         /// <param name="asgdue">The due DateTime for the new assignment</param>
         /// <param name="asgcontents">The contents of the new assignment</param>
+        /// 
         /// <returns>A JSON object containing success = true/false</returns>
+        /// 
         public IActionResult CreateAssignment(string subject, int num, string season, int year, string category, string asgname, int asgpoints, DateTime asgdue, string asgcontents)
         {
+
+
             return Json(new { success = false });
         }
 
