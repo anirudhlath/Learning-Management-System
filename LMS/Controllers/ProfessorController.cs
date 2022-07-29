@@ -178,24 +178,92 @@ namespace LMS_CustomIdentity.Controllers
 
 
         /// <summary>
+        /// 
         /// Returns a JSON array with all the assignments in an assignment category for a class.
+        /// 
         /// If the "category" parameter is null, return all assignments in the class.
+        /// 
         /// Each object in the array should have the following fields:
+        /// 
         /// "aname" - The assignment name
         /// "cname" - The assignment category name.
         /// "due" - The due DateTime
         /// "submissions" - The number of submissions to the assignment
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="category">The name of the assignment category in the class, 
         /// or null to return assignments from all categories</param>
+        /// 
         /// <returns>The JSON array</returns>
+        /// 
         public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
         {
-            return Json(null);
+            var queryAssignCat = from cl in db.Classes
+
+                              join co in db.Courses
+                              on cl.CatalogId equals co.CatalogId
+
+                              join asscat in db.AssignmentCategories
+                              on cl.ClassId equals asscat.ClassId
+
+                              join ass in db.Assignments
+                              on asscat.CategoryId equals ass.CategoryId
+
+                              join sub in db.Submissions
+                              on cl.ClassId equals sub.ClassId
+
+                              where co.SubjectAbb == subject
+                              where co.CourseNumber == num.ToString()
+                              where cl.Season == season
+                              where cl.Year == year
+                              where asscat.Name == category
+
+                              select new
+                              {
+                                  aname = ass.Name,
+                                  cname = asscat.Name,
+                                  due = ass.DueDateTime,
+                                  //CHECK: submissions count
+                                  //submissions = 
+                              };
+
+            if (category == null)
+            {
+                var query = from cl in db.Classes
+
+                            join co in db.Courses
+                            on cl.CatalogId equals co.CatalogId
+
+                            join asscat in db.AssignmentCategories
+                            on cl.ClassId equals asscat.ClassId
+
+                            join ass in db.Assignments
+                            on asscat.CategoryId equals ass.CategoryId
+
+                            join sub in db.Submissions
+                            on cl.ClassId equals sub.ClassId
+
+                            where co.SubjectAbb == subject
+                            where co.CourseNumber == num.ToString()
+                            where cl.Season == season
+                            where cl.Year == year
+
+                            select new
+                            {
+                                aname = ass.Name,
+                                cname = asscat.Name,
+                                due = ass.DueDateTime,
+                                //CHECK: submissions count
+                                //submissions = 
+                            };
+            }
+
+            return Json(queryAssignCat.ToArray());
         }
 
 
