@@ -1,5 +1,6 @@
 ﻿using LMS.Areas.Identity.Data;
 using LMS.Models;
+using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,8 +16,11 @@ public class Program
         builder.Services.AddControllersWithViews();
 
         var identityConnectionString = builder.Configuration["LMS:IdentityConnectionString"];
+        var lmsConnectionString = builder.Configuration["LMS:LMSConnectionString"];
         builder.Services.AddDbContext<LMSIdentityDbContext>(options =>
             options.UseMySql(identityConnectionString, ServerVersion.AutoDetect(identityConnectionString)));
+        builder.Services.AddDbContext<LMSContext>(options =>
+            options.UseMySql(lmsConnectionString, ServerVersion.AutoDetect(lmsConnectionString)));
 
 
         builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)

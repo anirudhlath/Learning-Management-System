@@ -207,7 +207,7 @@ namespace LMS.Areas.Identity.Pages.Account
             // Check if database has entries
             if (_db.Users.Any())
             {
-                var last = _db.Users.Last(); // Check last entry
+                var last = _db.Users.OrderBy(u => u.UId).Last(); // Check last entry
                 var uid = uint.Parse(last.UId.Remove(0,1)); // Remove the 'u'
                 if (uid > 9999999) // Check if there is no space for more users
                 {

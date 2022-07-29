@@ -66,7 +66,7 @@ namespace LMS.Areas.Identity.Pages.Account
         }
 
         #region snippet
-        public async Task<IActionResult> OnPostAsync(string returnUrl = "")
+        public async Task<IActionResult> OnPostAsync(string? returnUrl = null)
         {
             Console.WriteLine($"on post async param: {returnUrl}, property: {ReturnUrl}");
             returnUrl = returnUrl ?? Url.Content("~/");
