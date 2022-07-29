@@ -189,6 +189,8 @@ namespace LMS.Controllers
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
         {
+            bool submitted = false;
+
             var query_assignment = (from c in db.Classes
                                     join co in db.Courses
                                     on c.CatalogId equals co.CatalogId
@@ -226,6 +228,8 @@ namespace LMS.Controllers
 
                 //add to database
                 db.Submissions.Add(subm);
+
+                submitted = true;
             }
 
             //if the assignment has already been submitted once
@@ -233,12 +237,13 @@ namespace LMS.Controllers
             {
                 query_submission.SubmissionContents = contents;
                 query_submission.SubmissionTime = DateTime.Now;
+
+                submitted = true;
             }
 
             db.SaveChanges();
 
-            //always returns true
-            return Json(new { success = true });
+            return Json(new { success = submitted });
         }
 
 
@@ -253,11 +258,16 @@ namespace LMS.Controllers
         /// <param name="uid">The uid of the student</param>
         /// 
         /// <returns>A JSON object containing {success = {true/false}.
+        /// 
         /// false if the student is already enrolled in the class, true otherwise.</returns>
         /// 
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
-        {          
-            return Json(new { success = false});
+        {
+            bool studentEnrolled = false;
+
+
+
+            return Json(new { success = studentEnrolled});
         }
 
 
