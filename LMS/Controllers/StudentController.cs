@@ -308,14 +308,16 @@ namespace LMS.Controllers
 
 
         /// <summary>
-        /// 
         /// Calculates a student's GPA
+        /// 
         /// A student's GPA is determined by the grade-point representation of the average grade in all their classes.
+        ///
         /// Assume all classes are 4 credit hours.
         /// 
         /// If a student does not have a grade in a class ("--"), that class is not counted in the average.
         /// 
         /// If a student is not enrolled in any classes, they have a GPA of 0.0.
+        /// 
         /// Otherwise, the point-value of a letter grade is determined by the table on this page:
         /// https://advising.utah.edu/academic-standards/gpa-calculator-new.php
         /// 
@@ -326,8 +328,104 @@ namespace LMS.Controllers
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
         /// 
         public IActionResult GetGPA(string uid)
-        {            
-            return Json(null);
+        {
+            double studentGrades = 0.0;
+            int num_of_grades = 0;
+
+            var get_grades = from e in db.Enrollments
+                             where e.UId == uid
+                             select e.Grade;
+
+            foreach (var grade in get_grades)
+            {
+                if (grade == "A")
+                {
+                    studentGrades += 4.0;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "A-")
+                {
+                    studentGrades += 3.7;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "B+")
+                {
+                    studentGrades += 3.3;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "B")
+                {
+                    studentGrades += 3.0;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "B-")
+                {
+                    studentGrades += 2.7;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "C+")
+                {
+                    studentGrades += 2.3;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "C")
+                {
+                    studentGrades += 2.0;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "C-")
+                {
+                    studentGrades += 1.7;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "D+")
+                {
+                    studentGrades += 1.3;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "D")
+                {
+                    studentGrades += 1.0;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "D-")
+                {
+                    studentGrades += 0.7;
+                    num_of_grades++;
+                    break;
+                }
+
+                else if (grade == "E")
+                {
+                    studentGrades += 0.0;
+                    num_of_grades++;
+                    break;
+                }
+            }
+
+            double cumulativevGPA = (studentGrades / num_of_grades); 
+
+            return Json(cumulativevGPA);
         }
                 
         /*******End code to modify********/
