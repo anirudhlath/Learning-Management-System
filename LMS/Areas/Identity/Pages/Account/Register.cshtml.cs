@@ -23,6 +23,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using LMS.Models.LMSModels;
 
 namespace LMS.Areas.Identity.Pages.Account
 {
@@ -32,7 +33,7 @@ namespace LMS.Areas.Identity.Pages.Account
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUserStore<ApplicationUser> _userStore;
 
-        private readonly LMSContext db;
+        private readonly LMSContext _db;
 
         private int userCount = 1;
         //private readonly IUserEmailStore<IdentityUser> _emailStore;
@@ -44,7 +45,7 @@ namespace LMS.Areas.Identity.Pages.Account
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
             ILogger<RegisterModel> logger,
-            LMSContext _db
+            LMSContext db
             /*IEmailSender emailSender*/)
         {
             _userManager = userManager;
@@ -52,7 +53,7 @@ namespace LMS.Areas.Identity.Pages.Account
             //_emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
-            db = _db;
+            this._db = db;
             //_emailSender = emailSender;
         }
         
@@ -202,10 +203,11 @@ namespace LMS.Areas.Identity.Pages.Account
         {
             uint num = 1;
             
+            
             // Check if database has entries
-            if (db.Users.Any())
+            if (_db.Users.Any())
             {
-                var last = db.Users.Last(); // Check last entry
+                var last = _db.Users.Last(); // Check last entry
                 var uid = uint.Parse(last.UId.Remove(0,1)); // Remove the 'u'
                 if (uid > 9999999) // Check if there is no space for more users
                 {
@@ -217,8 +219,9 @@ namespace LMS.Areas.Identity.Pages.Account
             }
             
             // Prepare string format
-            const string fmt = "u0000000";
-            var userId = num.ToString(fmt);
+            const string fmt = "0000000";
+            var userId = "u" + num.ToString(fmt);
+            
             
             var user = new User
             {
@@ -237,8 +240,8 @@ namespace LMS.Areas.Identity.Pages.Account
                     Major = departmentAbbrev
                 };
                 user.Student = student;
-                db.Users.Add(user);
-                db.Students.Add(student);
+                _db.Users.Add(user);
+                _db.Students.Add(student);
             }
             else if (role.ToLower() == "professor")
             {
@@ -248,8 +251,8 @@ namespace LMS.Areas.Identity.Pages.Account
                     SubjectAbb = departmentAbbrev
                 };
                 user.Professor = professor;
-                db.Users.Add(user);
-                db.Professors.Add(professor);
+                _db.Users.Add(user);
+                _db.Professors.Add(professor);
             }
             else if (role.ToLower() == "administrator")
             {
@@ -258,8 +261,8 @@ namespace LMS.Areas.Identity.Pages.Account
                     UId = userId
                 };
                 user.Administrator = administrator;
-                db.Users.Add(user);
-                db.Administrators.Add(administrator);
+                _db.Users.Add(user);
+                _db.Administrators.Add(administrator);
             }
             else
             {
@@ -267,7 +270,7 @@ namespace LMS.Areas.Identity.Pages.Account
                 return null;
             }
 
-            db.SaveChanges();
+            _db.SaveChanges();
             return userId;
         }
 
