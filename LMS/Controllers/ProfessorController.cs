@@ -105,21 +105,74 @@ namespace LMS_CustomIdentity.Controllers
 
         /// <summary>
         /// Returns a JSON array of all the students in a class.
+        /// 
         /// Each object in the array should have the following fields:
+        /// 
         /// "fname" - first name
         /// "lname" - last name
         /// "uid" - user ID
         /// "dob" - date of birth
         /// "grade" - the student's grade in this class
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
+        ///
         /// <returns>The JSON array</returns>
+        /// 
         public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
         {
-            return Json(null);
+            //var query_class = from co in db.Courses
+            //                  join cl in db.Classes
+            //                  on co.CatalogId equals cl.CatalogId
+
+            //                  where co.SubjectAbb == subject
+            //                  where co.CourseNumber == num.ToString()
+            //                  where cl.Season == season
+            //                  where cl.Year == year
+
+            var query_class = (from cl in db.Classes
+                              where cl.Season == season
+                              where cl.Year == year
+
+                              select new
+                              {
+                                  catalogID = cl.CatalogId,
+                                  classId = cl.ClassId
+                              }).FirstOrDefault();
+
+            var query_course = (from co in db.Courses
+                               where co.SubjectAbb == subject
+                               where co.CourseNumber == num.ToString()
+                               where co.CatalogId == query_class.catalogID
+
+                               select new
+                               {
+                                   courseID = co.CatalogId
+                               }).FirstOrDefault();
+
+            var query_student = from e in db.Enrollments
+                                join s in db.Students
+                                on e.UId equals s.UId
+                                join u in db.Users
+                                on s.UId equals u.UId
+                                where e.ClassId == query_class.classId
+
+                                select new
+                                {
+                                    fname = u.FirstName,
+                                    lname = u.LastName,
+                                    uid = u.UId,
+                                    dob = u.Dob,
+                                    grade = e.Grade
+                                };
+
+                              //var query_students = from 
+
+            return Json(query_student.ToArray());
         }
 
 
