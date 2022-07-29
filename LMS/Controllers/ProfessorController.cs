@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
@@ -464,6 +465,10 @@ namespace LMS_CustomIdentity.Controllers
                 createdAssignment = true;
             }
 
+            //TODO : set autograder
+            //TODO : fix uid param
+            Autograder(uid, subject, num, season, year, category, asgname);
+
             return Json(new { success = createdAssignment });
         }
 
@@ -503,13 +508,51 @@ namespace LMS_CustomIdentity.Controllers
         /// <param name="category">The name of the assignment category in the class</param>
         /// <param name="asgname">The name of the assignment</param>
         /// <param name="uid">The uid of the student who's submission is being graded</param>
+        /// 
         /// <param name="score">The new score for the submission</param>
         /// 
         /// <returns>A JSON object containing success = true/false</returns>
         /// 
-        public IActionResult GradeSubmission(string subject, int num, string season, int year, string category, string asgname, string uid, int score)
+        public IActionResult GradeSubmission(string subject, int num, string season,
+            int year, string category, string asgname, string uid, int score)
         {
-            return Json(new { success = false });
+            bool gradeSubmitted = false;
+
+            var query = from ass in db.Assignments
+                        join asscat in db.AssignmentCategories
+                        on ass.CategoryId equals asscat.CategoryId
+
+                        join cl in db.Classes
+                        on asscat.ClassId equals cl.ClassId
+
+                        join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+
+                        join sub in db.Submissions
+                        on cl.ClassId equals sub.ClassId
+
+                        where co.SubjectAbb == subject
+                        where co.CourseNumber == num.ToString()
+                        where cl.Season == season
+                        where cl.Year == year
+                        where asscat.Name == category
+                        where ass.Name == asgname
+                        where sub.UId == uid
+
+                        select sub; 
+
+            foreach (var q in query)
+            {
+                q.Score = (uint)score;
+            }
+
+            //TODO : set autograder
+            Autograder(uid, subject, num, season, year, category, asgname);
+
+            gradeSubmitted = true;
+            db.SaveChanges();
+
+            return Json(new { success = gradeSubmitted });
         }
 
 
