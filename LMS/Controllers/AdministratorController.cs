@@ -245,6 +245,7 @@ namespace LMS.Controllers
                 new_class.StartTime = TimeOnly.FromDateTime(start);
                 new_class.EndTime = TimeOnly.FromDateTime(end);
                 new_class.Season = season;
+                new_class.Year = (uint) year;
                 new_class.CatalogId = catalogID;
 
                 db.Classes.Add(new_class);

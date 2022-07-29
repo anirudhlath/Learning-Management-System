@@ -64,51 +64,116 @@ namespace LMS.Controllers
         /*******Begin code to modify********/
 
         /// <summary>
+        /// 
         /// Returns a JSON array of the classes the given student is enrolled in.
+        /// 
         /// Each object in the array should have the following fields:
+        /// 
         /// "subject" - The subject abbreviation of the class (such as "CS")
         /// "number" - The course number (such as 5530)
         /// "name" - The course name
         /// "season" - The season part of the semester
         /// "year" - The year part of the semester
         /// "grade" - The grade earned in the class, or "--" if one hasn't been assigned
+        /// 
         /// </summary>
+        /// 
         /// <param name="uid">The uid of the student</param>
+        /// 
         /// <returns>The JSON array</returns>
+        /// 
         public IActionResult GetMyClasses(string uid)
-        {           
-            return Json(null);
+        {
+            var query = from e in db.Enrollments
+                        join c in db.Classes on e.ClassId equals c.ClassId
+                        into leftSide
+                        
+                        from l in leftSide
+                        join r in db.Courses on l.CatalogId equals  r.CatalogId
+                        where e.UId == uid
+                        
+                        select new
+                        {
+                            subject = r.SubjectAbb,
+                            number = r.CourseNumber,
+                            name = r.CourseName,
+                            season = l.Season,
+                            year = l.Year,
+                            grade = e.Grade
+                        };
+
+
+            return Json(query.ToArray());
         }
 
         /// <summary>
+        /// 
         /// Returns a JSON array of all the assignments in the given class that the given student is enrolled in.
+        ///
         /// Each object in the array should have the following fields:
+        /// 
         /// "aname" - The assignment name
         /// "cname" - The category name that the assignment belongs to
         /// "due" - The due Date/Time
         /// "score" - The score earned by the student, or null if the student has not submitted to this assignment.
+        ///
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="uid"></param>
+        /// 
         /// <returns>The JSON array</returns>
+        /// 
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
-        {            
-            return Json(null);
+        {
+            var query = from c in db.Classes
+                        join asc in db.AssignmentCategories on c.ClassId equals asc.ClassId
+                        join ass in db.Assignments on asc.CategoryId equals ass.CategoryId
+                        join co in db.Courses on c.CatalogId equals co.CatalogId
+                        join e in db.Enrollments on c.ClassId equals e.ClassId
+                        where co.CourseNumber == num.ToString()
+                        where string.Equals(c.Season, season, StringComparison.CurrentCultureIgnoreCase)
+                        where c.Year == year
+                        where string.Equals(e.UId.ToLower(), uid.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                        where string.Equals(co.SubjectAbb.ToLower(), subject.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                        select new
+                        {
+                            aname = ass.Name,
+                            cname = asc.Name,
+                            due = ass.DueDateTime,
+                            score = from sub in db.Submissions
+                                    where string.Equals(sub.UId.ToLower(), uid.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                                    where c.ClassId == sub.ClassId
+                                    select sub.Score
+                        };
+
+            var result = new List<object>();
+            foreach (var assignment in query)
+            {
+                result.Add(new { assignment.aname, assignment.cname, assignment.due, score = (assignment.score.Any() ? assignment.score : null) });
+            }
+
+            return Json(result);
         }
 
 
 
         /// <summary>
+        /// 
         /// Adds a submission to the given assignment for the given student
         /// The submission should use the current time as its DateTime
         /// You can get the current time with DateTime.Now
+        /// 
         /// The score of the submission should start as 0 until a Professor grades it
+        /// 
         /// If a Student submits to an assignment again, it should replace the submission contents
         /// and the submission time (the score should remain the same).
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
@@ -117,10 +182,14 @@ namespace LMS.Controllers
         /// <param name="asgname">The new assignment name</param>
         /// <param name="uid">The student submitting the assignment</param>
         /// <param name="contents">The text contents of the student's submission</param>
+        /// 
         /// <returns>A JSON object containing {success = true/false}</returns>
+        /// 
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
-        {           
+        {
+            //var query = from 
+
             return Json(new { success = false });
         }
 
@@ -128,13 +197,16 @@ namespace LMS.Controllers
         /// <summary>
         /// Enrolls a student in a class.
         /// </summary>
+        /// 
         /// <param name="subject">The department subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester</param>
         /// <param name="year">The year part of the semester</param>
         /// <param name="uid">The uid of the student</param>
-        /// <returns>A JSON object containing {success = {true/false}. 
+        /// 
+        /// <returns>A JSON object containing {success = {true/false}.
         /// false if the student is already enrolled in the class, true otherwise.</returns>
+        /// 
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
         {          
             return Json(new { success = false});
@@ -143,16 +215,23 @@ namespace LMS.Controllers
 
 
         /// <summary>
+        /// 
         /// Calculates a student's GPA
         /// A student's GPA is determined by the grade-point representation of the average grade in all their classes.
         /// Assume all classes are 4 credit hours.
+        /// 
         /// If a student does not have a grade in a class ("--"), that class is not counted in the average.
+        /// 
         /// If a student is not enrolled in any classes, they have a GPA of 0.0.
         /// Otherwise, the point-value of a letter grade is determined by the table on this page:
         /// https://advising.utah.edu/academic-standards/gpa-calculator-new.php
+        /// 
         /// </summary>
+        /// 
         /// <param name="uid">The uid of the student</param>
+        /// 
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
+        /// 
         public IActionResult GetGPA(string uid)
         {            
             return Json(null);
