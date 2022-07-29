@@ -574,10 +574,12 @@ namespace LMS_CustomIdentity.Controllers
 
 
         /// helper function
-        public IActionResult Autograder(  )
+        public void Autograder(int uid, string subject, int num, string season, int year,
+            string category, string sgname)
         {
 
-            return Json(null);
+
+            db.SaveChanges(); 
         }
 
         /*******End code to modify********/
