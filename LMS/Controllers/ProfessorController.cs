@@ -270,20 +270,47 @@ namespace LMS_CustomIdentity.Controllers
 
 
         /// <summary>
+        /// 
         /// Returns a JSON array of the assignment categories for a certain class.
+        /// 
         /// Each object in the array should have the folling fields:
+        /// 
         /// "name" - The category name
         /// "weight" - The category weight
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
         /// <param name="year">The year part of the semester for the class the assignment belongs to</param>
         /// <param name="category">The name of the assignment category in the class</param>
+        /// 
         /// <returns>The JSON array</returns>
-        public IActionResult GetAssignmentCategories(string subject, int num, string season, int year)
+        /// 
+        public IActionResult GetAssignmentCategories(string subject, int num, string season, int year, string category)
         {
-            return Json(null);
+            var query = from cl in db.Classes
+
+                        join asscat in db.AssignmentCategories
+                        on cl.ClassId equals asscat.ClassId
+
+                        join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+
+                        where co.SubjectAbb == subject
+                        where co.CourseNumber == num.ToString()
+                        where cl.Season == season
+                        where cl.Year == year
+                        where asscat.Name == category
+
+                        select new
+                        {
+                            name = asscat.Name,
+                            weight = asscat.GradingWeight
+                        };
+
+            return Json(query.ToArray());
         }
 
         /// <summary>
