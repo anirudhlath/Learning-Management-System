@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -30,8 +31,12 @@ namespace LMS.Controllers
         /// </summary>
         /// <returns>The JSON array</returns>
         public IActionResult GetDepartments()
-        {            
-            return Json(null);
+        {
+            Console.WriteLine("CommonController.cs: GetDepartments() called!");
+            // CHECK:
+            var query = from d in db.Departments select d;
+                        
+            return Json(query.ToArray());
         }
 
 
@@ -48,8 +53,19 @@ namespace LMS.Controllers
         /// </summary>
         /// <returns>The JSON array</returns>
         public IActionResult GetCatalog()
-        {            
-            return Json(null);
+        {
+            Console.WriteLine("CommonController.cs: GetCatalog() called!");
+            var query = from d in db.Departments
+                        join co in db.Courses 
+                        on d.SubjectAbb equals co.SubjectAbb
+                select new
+                {
+                    subject = d.SubjectAbb,
+                    dname = d.Name,
+                    courses = db.Courses.Select(course => new {number = course.CourseNumber, cname = course.CourseName})
+
+                };
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -67,8 +83,28 @@ namespace LMS.Controllers
         /// <param name="number">The course number, as in 5530</param>
         /// <returns>The JSON array</returns>
         public IActionResult GetClassOfferings(string subject, int number)
-        {            
-            return Json(null);
+        {
+            Console.WriteLine("CommonController.cs: GetClassOfferings() called!");
+
+            // CHECK: change courseNumber to int?
+            var query = from co in db.Courses
+                join c in db.Classes on co.CatalogId equals c.CatalogId
+                join p in db.Professors on c.ProfessorUId equals p.UId
+                join u in db.Users on p.UId equals u.UId
+                where subject == co.SubjectAbb
+                where number.ToString() == co.CourseNumber
+
+                select new
+                {
+                    season = c.Season,
+                    year = c.Year,
+                    location = c.Location,
+                    start = c.StartTime,
+                    end = c.EndTime,
+                    fname = u.FirstName,
+                    lname = u.LastName
+                };
+            return Json(query.ToArray());
         }
 
         /// <summary>
@@ -84,8 +120,22 @@ namespace LMS.Controllers
         /// <param name="asgname">The name of the assignment in the category</param>
         /// <returns>The assignment contents</returns>
         public IActionResult GetAssignmentContents(string subject, int num, string season, int year, string category, string asgname)
-        {            
-            return Content("");
+        {
+            Console.WriteLine("CommonController.cs: GetAssignmentContents() called!");
+            // CHECK: Remove submissions join
+            var query = from s in db.Submissions
+                join c in db.Classes on s.ClassId equals c.ClassId
+                join cat in db.AssignmentCategories on s.ClassId equals cat.ClassId
+                join co in db.Courses on c.CatalogId equals co.CatalogId
+                join asg in db.Assignments on cat.CategoryId equals asg.CategoryId
+                where subject == co.SubjectAbb
+                where num.ToString() == co.CourseNumber
+                where season == c.Season
+                where year == c.Year
+                where category == cat.Name
+                where asgname == asg.Name
+                select asg.Content;
+            return Content(query.LastOrDefault() ?? "");
         }
 
 
@@ -104,8 +154,21 @@ namespace LMS.Controllers
         /// <param name="uid">The uid of the student who submitted it</param>
         /// <returns>The submission text</returns>
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
-        {            
-            return Content("");
+        {
+            Console.WriteLine("CommonController.cs: GetSubmissionText() called!");
+            var query = from s in db.Submissions
+                join c in db.Classes on s.ClassId equals c.ClassId
+                join cat in db.AssignmentCategories on s.ClassId equals cat.ClassId
+                join co in db.Courses on c.CatalogId equals co.CatalogId
+                join asg in db.Assignments on cat.CategoryId equals asg.CategoryId
+                where subject == co.SubjectAbb
+                where num.ToString() == co.CourseNumber
+                where season == c.Season
+                where year == c.Year
+                where category == cat.Name
+                where asgname == asg.Name
+                select s.SubmissionContents;
+            return Content(query.LastOrDefault() ?? "");
         }
 
 
@@ -126,7 +189,54 @@ namespace LMS.Controllers
         /// or an object containing {success: false} if the user doesn't exist
         /// </returns>
         public IActionResult GetUser(string uid)
-        {           
+        {
+            Console.WriteLine("CommonController.cs: GetUser() called!");
+            if (db.Students.Find(uid) != null)
+            {
+                var query = from u in db.Users
+                    join s in db.Students on u.UId equals s.UId
+                    join d in db.Departments on s.Major equals d.SubjectAbb
+                    where s.UId == uid
+                    select new
+                    {
+                        fname = u.FirstName,
+                        lname = u.LastName,
+                        uid = u.UId,
+                        department = d.Name
+                    };
+                return Json(query.First());
+            }
+            
+            if (db.Professors.Find(uid) != null)
+            {
+                var query = from u in db.Users
+                    join p in db.Professors on u.UId equals p.UId
+                    join d in db.Departments on p.SubjectAbb equals d.SubjectAbb
+                    where p.UId == uid
+                    select new
+                    {
+                        fname = u.FirstName,
+                        lname = u.LastName,
+                        uid = u.UId,
+                        department = d.Name
+                    };
+                return Json(query.First());
+            }
+            
+            if (db.Administrators.Find(uid) != null)
+            {
+                var query = from u in db.Users
+                    join a in db.Administrators on u.UId equals a.UId
+                    where a.UId == uid
+                    select new
+                    {
+                        fname = u.FirstName,
+                        lname = u.LastName,
+                        uid = u.UId
+                    };
+                return Json(query.First());
+            }
+            
             return Json(new { success = false });
         }
 
