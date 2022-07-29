@@ -261,6 +261,8 @@ namespace LMS_CustomIdentity.Controllers
                                 //CHECK: submissions count
                                 //submissions = 
                             };
+
+                return Json(query.ToArray());
             }
 
             return Json(queryAssignCat.ToArray());
