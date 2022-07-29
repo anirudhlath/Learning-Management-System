@@ -85,15 +85,20 @@ namespace LMS.Controllers
         public IActionResult GetMyClasses(string uid)
         {
             var query = from e in db.Enrollments
-                        join c in db.Courses on e.CatalogId equals c.CatalogId
+                        join c in db.Classes on e.ClassId equals c.ClassId
+                        into leftSide
+                        
+                        from l in leftSide
+                        join r in db.Courses on l.CatalogId equals  r.CatalogId
                         where e.UId == uid
-
+                        
                         select new
                         {
-                            subject = c.SubjectAbb,
-                            number = c.CourseNumber,
-                            name = c.CourseName,
-                            season = e.Semester,
+                            subject = r.SubjectAbb,
+                            number = r.CourseNumber,
+                            name = r.CourseName,
+                            season = l.Season,
+                            year = l.Year,
                             grade = e.Grade
                         };
 
