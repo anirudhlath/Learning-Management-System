@@ -154,13 +154,18 @@ namespace LMS.Controllers
 
 
         /// <summary>
+        /// 
         /// Adds a submission to the given assignment for the given student
         /// The submission should use the current time as its DateTime
         /// You can get the current time with DateTime.Now
+        /// 
         /// The score of the submission should start as 0 until a Professor grades it
+        /// 
         /// If a Student submits to an assignment again, it should replace the submission contents
         /// and the submission time (the score should remain the same).
+        /// 
         /// </summary>
+        /// 
         /// <param name="subject">The course subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester for the class the assignment belongs to</param>
@@ -169,10 +174,14 @@ namespace LMS.Controllers
         /// <param name="asgname">The new assignment name</param>
         /// <param name="uid">The student submitting the assignment</param>
         /// <param name="contents">The text contents of the student's submission</param>
+        /// 
         /// <returns>A JSON object containing {success = true/false}</returns>
+        /// 
         public IActionResult SubmitAssignmentText(string subject, int num, string season, int year,
           string category, string asgname, string uid, string contents)
-        {           
+        {
+            //var query = from 
+
             return Json(new { success = false });
         }
 
@@ -180,13 +189,16 @@ namespace LMS.Controllers
         /// <summary>
         /// Enrolls a student in a class.
         /// </summary>
+        /// 
         /// <param name="subject">The department subject abbreviation</param>
         /// <param name="num">The course number</param>
         /// <param name="season">The season part of the semester</param>
         /// <param name="year">The year part of the semester</param>
         /// <param name="uid">The uid of the student</param>
-        /// <returns>A JSON object containing {success = {true/false}. 
+        /// 
+        /// <returns>A JSON object containing {success = {true/false}.
         /// false if the student is already enrolled in the class, true otherwise.</returns>
+        /// 
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
         {          
             return Json(new { success = false});
@@ -195,16 +207,23 @@ namespace LMS.Controllers
 
 
         /// <summary>
+        /// 
         /// Calculates a student's GPA
         /// A student's GPA is determined by the grade-point representation of the average grade in all their classes.
         /// Assume all classes are 4 credit hours.
+        /// 
         /// If a student does not have a grade in a class ("--"), that class is not counted in the average.
+        /// 
         /// If a student is not enrolled in any classes, they have a GPA of 0.0.
         /// Otherwise, the point-value of a letter grade is determined by the table on this page:
         /// https://advising.utah.edu/academic-standards/gpa-calculator-new.php
+        /// 
         /// </summary>
+        /// 
         /// <param name="uid">The uid of the student</param>
+        /// 
         /// <returns>A JSON object containing a single field called "gpa" with the number value</returns>
+        /// 
         public IActionResult GetGPA(string uid)
         {            
             return Json(null);
