@@ -450,7 +450,7 @@ namespace LMS_CustomIdentity.Controllers
                 };
 
             //if assignment already exists
-            if (query.Count() > 0)
+            if (query.Any())
             {
                 // do nothing
                 createdAssignment = false;
@@ -458,27 +458,41 @@ namespace LMS_CustomIdentity.Controllers
 
             else
             {
-                Assignment newAssign = new Assignment();
-
-                newAssign.Name = asgname;
-                newAssign.MaxPoints = (uint)asgpoints;
-                newAssign.DueDateTime = asgdue;
-                newAssign.Content = asgcontents;
-
-                //update grade
-                var update_grade = from en in db.Enrollments
-                                   select en.Grade;
-                //CHECK : put autograder back?
-
+                Assignment newAssign = new Assignment
+                {
+                    Name = asgname,
+                    MaxPoints = (uint)asgpoints,
+                    DueDateTime = asgdue,
+                    Content = asgcontents
+                };
+                
                 db.Assignments.Add(newAssign);
                 db.SaveChanges();
+                
+                // UPDATE GRADES OF ALL STUDENTS WHICH THIS ASSIGNMENT AFFECTS
+                var update = from e in db.Enrollments
+                    join c in db.Classes on e.ClassId equals c.ClassId
+                    join co in db.Courses on c.CatalogId equals co.CatalogId
+                    where co.SubjectAbb == subject
+                    where co.CourseNumber == num.ToString()
+                    where c.Season == season
+                    where c.Year == year
+
+                    select new
+                    {
+                        uId = e.UId,
+                        classId = e.ClassId,
+                        grade = e.Grade
+                    };
+
+                foreach (var student in update)
+                {
+                    Autograder(student.uId, subject, num, season, year, category, asgname);
+                }
 
                 createdAssignment = true;
             }
-
-            //TODO : set autograder
-            //TODO : fix uid param
-            // Autograder(uid, subject, num, season, year, category, asgname);
+            
 
             return Json(new { success = createdAssignment });
         }
@@ -579,11 +593,11 @@ namespace LMS_CustomIdentity.Controllers
             {
                 q.Score = (uint)score;
             }
-
-            Autograder(uid, subject, num, season, year, category, asgname);
-
+            
             gradeSubmitted = true;
             db.SaveChanges();
+
+            Autograder(uid, subject, num, season, year, category, asgname);
 
             return Json(new { success = gradeSubmitted });
         }
