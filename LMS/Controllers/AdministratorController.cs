@@ -176,6 +176,18 @@ namespace LMS.Controllers
                 }
             }
 
+            uint num = 1;
+
+
+            // Check if database has entries
+            if (db.Courses.Any())
+            {
+                var last = db.Courses.OrderBy(u => u.CatalogId).Last(); // Check last entry
+                var id = int.Parse(last.CatalogId);
+
+                num += id;
+            }
+
             if (newCourse)
             {
                 Course course = new Course();
