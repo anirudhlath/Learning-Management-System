@@ -459,15 +459,16 @@ namespace LMS_CustomIdentity.Controllers
                 newAssign.DueDateTime = asgdue;
                 newAssign.Content = asgcontents;
 
+                //update grade
+                var update_grade = from en in db.Enrollments
+                                   select en.Grade;
+                //CHECK : put autograder back?
+
                 db.Assignments.Add(newAssign);
                 db.SaveChanges();
 
                 createdAssignment = true;
             }
-
-            //TODO : set autograder
-            //TODO : fix uid param
-            Autograder(uid, subject, num, season, year, category, asgname);
 
             return Json(new { success = createdAssignment });
         }
@@ -546,7 +547,6 @@ namespace LMS_CustomIdentity.Controllers
                 q.Score = (uint)score;
             }
 
-            //TODO : set autograder
             Autograder(uid, subject, num, season, year, category, asgname);
 
             gradeSubmitted = true;
@@ -727,7 +727,6 @@ namespace LMS_CustomIdentity.Controllers
 
             foreach (var enrollment in querry_enrolled)
             {
-                //CHECK : is a {} missing somewhere or extra?
                 enrollment.Grade = totalGrade;
             }
 
