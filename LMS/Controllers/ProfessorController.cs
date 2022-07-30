@@ -605,20 +605,19 @@ namespace LMS_CustomIdentity.Controllers
                         select new
                         {
                             category_weight = asscat.GradingWeight,
-                            assignments = from ass in db.Assignments
-                                          join sub in db.Submissions
-                                          //TODO:
-                                          //CHECK that these tables are connected in db
-                                          //on ass.AsId equals sub.AsId
+                            assignments =   from ass in db.Assignments
+                                            join cat in db.AssignmentCategories on ass.CategoryId equals cat.CategoryId
+                                            join c in db.Classes on cat.ClassId equals c.ClassId
+                                            join sub in db.Submissions on c.ClassId equals sub.ClassId
 
-                                          where ass.CategoryId == asscat.CategoryId
-                                          where sub.UId == uid
+                                            where ass.CategoryId == asscat.CategoryId
+                                            where sub.UId == uid
 
-                                          select new
-                                          {
-                                              max_score = ass.MaxPoints,
-                                              score = sub.Score
-                                          }
+                                            select new
+                                            {
+                                                max_score = ass.MaxPoints,
+                                                score = sub.Score
+                                            }
                         };
 
             int weight_total = 0;
@@ -648,7 +647,7 @@ namespace LMS_CustomIdentity.Controllers
             double scaling_factor = 100 / (double)weight_total;
             double percentGrade = percent * scaling_factor;
 
-            string totalGrade;
+            string totalGrade = "";
 
             if (percentGrade >= 92)
             {
