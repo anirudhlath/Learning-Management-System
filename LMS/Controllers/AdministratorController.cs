@@ -182,6 +182,7 @@ namespace LMS.Controllers
             // Check if database has entries
             if (db.Courses.Any())
             {
+                //TODO : 
                 var last = db.Courses.OrderBy(u => u.CatalogId).Last(); // Check last entry
                 var id = int.Parse(last.CatalogId);
 
