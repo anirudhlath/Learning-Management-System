@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Microsoft.VisualBasic;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -501,8 +503,29 @@ namespace LMS_CustomIdentity.Controllers
         public IActionResult GetSubmissionsToAssignment(string subject, int num, string season, int year,
             string category, string asgname)
         {
-            var
-            return Json(null);
+            var query = from c in db.Classes
+                join cat in db.AssignmentCategories on c.ClassId equals cat.ClassId
+                join a in db.Assignments on cat.CategoryId equals a.CategoryId
+                join s in db.Submissions on c.ClassId equals s.ClassId
+                join co in db.Courses on c.CatalogId equals co.CatalogId
+                where subject == co.SubjectAbb
+                where num.ToString() == co.CourseNumber
+                where season == c.Season
+                where year == c.Year
+                where category == cat.Name
+                where asgname == a.Name
+
+                select new
+                {
+                    subject = co.SubjectAbb,
+                    num = co.CourseNumber,
+                    season = c.Season,
+                    year = c.Year,
+                    category = cat.Name,
+                    asgname = a.Name
+                };
+
+            return Json(query.ToArray());
         }
 
 
@@ -579,7 +602,19 @@ namespace LMS_CustomIdentity.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetMyClasses(string uid)
         {
-            return Json(null);
+            var query = from c in db.Classes
+                join co in db.Courses on c.CatalogId equals co.CatalogId
+                where c.ProfessorUId == uid
+
+                select new
+                {
+                    subject = co.SubjectAbb,
+                    number = co.CourseNumber,
+                    name = co.CourseName,
+                    season = c.Season,
+                    year = c.Year
+                };
+            return Json(query.ToArray());
         }
 
 
