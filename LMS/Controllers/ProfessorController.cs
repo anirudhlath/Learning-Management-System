@@ -573,16 +573,169 @@ namespace LMS_CustomIdentity.Controllers
         }
 
 
-        /// helper function
-        public void Autograder(int uid, string subject, int num, string season, int year,
-            string category, string sgname)
+        /// Autograder helper function
+        /// 
+        /// "subject" - The subject abbreviation of the class (such as "CS")
+        /// "num" - The course number (such as 5530)
+        /// "name" - The course name
+        /// "season" - The season part of the semester in which the class is taught
+        /// "year" - The year part of the semester in which the class is taught
+        /// <param name="category">The name of the assignment category in the class</param>
+        /// <param name="asgname">The name of the assignment</param>
+        ///
+        /// "asgpoints" - The max point value for the new assignment
+        /// 
+        private void Autograder(string uid, string subject, int num, string season, int year,
+            string category, string asgname)
         {
 
+            var query = from asscat in db.AssignmentCategories
 
-            db.SaveChanges(); 
+                        join cl in db.Classes
+                        on asscat.ClassId equals cl.ClassId
+
+                        join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+
+                        where co.SubjectAbb == subject
+                        where cl.Season == season
+                        where cl.Year == year
+                        where asscat.Name == category
+
+                        select new
+                        {
+                            category_weight = asscat.GradingWeight,
+                            assignments = from ass in db.Assignments
+                                          join sub in db.Submissions
+                                          //TODO:
+                                          //CHECK that these tables are connected in db
+                                          //on ass.AsId equals sub.AsId
+
+                                          where ass.CategoryId == asscat.CategoryId
+                                          where sub.UId == uid
+
+                                          select new
+                                          {
+                                              max_score = ass.MaxPoints,
+                                              score = sub.Score
+                                          }
+                        };
+
+            int weight_total = 0;
+            double percent = 0.0;
+
+
+            foreach (var assignment_category in query)
+            {
+                int points_total = 0;
+                int max_points = 0;
+
+                foreach (var assignment in assignment_category.assignments)
+                {
+                    points_total += (int)assignment.score;
+                    max_points += (int)assignment.max_score;
+                }
+
+                if (points_total == 0)
+                {
+                    return;
+                }
+
+                percent += ((double)points_total / max_points) * assignment_category.category_weight;
+                weight_total += (int)assignment_category.category_weight;
+            }
+
+            double scaling_factor = 100 / (double)weight_total;
+            double percentGrade = percent * scaling_factor;
+
+            string totalGrade;
+
+            if (percentGrade >= 92)
+            {
+                totalGrade = "A";
+            }
+
+            else if (percentGrade >= 90)
+            {
+                totalGrade = "A-";
+            }
+
+            else if (percentGrade >= 87)
+            {
+                totalGrade = "B+";
+            }
+
+            else if (percentGrade >= 82)
+            {
+                totalGrade = "B";
+            }
+
+            else if (percentGrade >= 80)
+            {
+                totalGrade = "B-";
+            }
+
+            else if (percentGrade >= 77)
+            {
+                totalGrade = "C+";
+            }
+
+            else if (percentGrade >= 72)
+            {
+                totalGrade = "C";
+            }
+
+            else if (percentGrade >= 70)
+            {
+                totalGrade = "C-";
+            }
+
+            else if (percentGrade >= 67)
+            {
+                totalGrade = "D+";
+            }
+
+            else if (percentGrade >= 62)
+            {
+                totalGrade = "D";
+            }
+
+            else if (percentGrade >= 60)
+            {
+                totalGrade = "D-";
+            }
+
+            else if (percentGrade < 60)
+            {
+                totalGrade = "E";
+            }
+
+
+            var querry_enrolled = from en in db.Enrollments
+                                  join cl in db.Classes
+                                  on en.ClassId equals cl.ClassId
+
+                                  join co in db.Courses
+                                  on cl.CatalogId equals co.CatalogId
+
+                                  where co.SubjectAbb == subject
+                                  where cl.Season == season
+                                  where cl.Year == year
+                                  where co.CourseNumber == num.ToString()
+                                  where en.UId == uid
+
+                                  select en;
+
+            foreach (var enrollment in querry_enrolled)
+            {
+                //CHECK : is a {} missing somewhere or extra?
+                enrollment.Grade = totalGrade;
+            }
+
+            db.SaveChanges();
         }
 
-        /*******End code to modify********/
+            /*******End code to modify********/
+        }
     }
-}
 
