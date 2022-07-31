@@ -278,6 +278,7 @@ namespace LMS_CustomIdentity.Controllers
         /// 
         public IActionResult GetAssignmentCategories(string subject, int num, string season, int year, string category)
         {
+            // TODO: Fix this, and continue adding categories to test the rest of the program.
             Console.WriteLine("Getting assignment categories.");
             var query = from cl in db.Classes
 
