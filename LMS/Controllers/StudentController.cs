@@ -192,31 +192,47 @@ namespace LMS.Controllers
             bool submitted = false;
 
             var query_assignment = (from c in db.Classes
-                                    join co in db.Courses
-                                    on c.CatalogId equals co.CatalogId
-                                    join asscat in db.AssignmentCategories
-                                    on c.ClassId equals asscat.ClassId
-                                    join ass in db.Assignments
-                                    //CHECK: is this selecting right?
-                                    on asscat.CategoryId equals ass.CategoryId
+                join co in db.Courses
+                    on c.CatalogId equals co.CatalogId
+                join asscat in db.AssignmentCategories
+                    on c.ClassId equals asscat.ClassId
+                join ass in db.Assignments
+                    //CHECK: is this selecting right?
+                    on asscat.CategoryId equals ass.CategoryId
 
-                                    where co.SubjectAbb == subject
-                                    where co.CourseNumber == num.ToString()
-                                    where c.Season == season
-                                    where c.Year == year
-                                    where asscat.Name == category
-                                    where ass.Name == asgname
+                where co.SubjectAbb == subject
+                where co.CourseNumber == num.ToString()
+                where c.Season == season
+                where c.Year == year
+                where asscat.Name == category
+                where ass.Name == asgname
 
-                                    select ass).FirstOrDefault();
+                select new
+                {
+                    assignmentId = ass.AssignmentId,
+                    classId = c.ClassId
+                }).FirstOrDefault();
 
             var query_submission = (from sub in db.Submissions
-                                    //CHECK: check if submission id is the equivalent of assignment id
-                                    where sub.SubmissionId == query_assignment.AssignmentId
+                //CHECK: check if submission id is the equivalent of assignment id
+                                    where sub.AssignmentId == query_assignment.assignmentId
+                                    where sub.UId == uid
                                     select sub).FirstOrDefault();
 
             //if there has been no submission yet, set the submission
             if (query_submission == null)
             {
+                uint idCount = 1;
+
+
+                // Check if database has entries
+                if (db.Submissions.Any())
+                {
+                    var last = db.Submissions.OrderBy(u => u.SubmissionId).Last(); // Check last entry
+                    var id = last.SubmissionId;
+                    idCount += id;
+                }
+                
                 Submission subm = new Submission();
 
                 subm.SubmissionTime = DateTime.Now;
@@ -225,7 +241,9 @@ namespace LMS.Controllers
                 subm.SubmissionContents = contents;
                 subm.UId = uid;
                 //CHECK: may be a good idea to set submission id = to assignment id so they're connected that way
-                subm.SubmissionId = query_assignment.AssignmentId;
+                subm.SubmissionId = idCount;
+                subm.AssignmentId = query_assignment.assignmentId; 
+                subm.ClassId = query_assignment.classId;
 
                 //add to database
                 db.Submissions.Add(subm);
@@ -264,6 +282,7 @@ namespace LMS.Controllers
         /// 
         public IActionResult Enroll(string subject, int num, string season, int year, string uid)
         {
+            Console.WriteLine("Enrolling student in class.");
             bool studentEnrolled = false;
 
             var check_enrollment = (from e in db.Enrollments
@@ -280,16 +299,29 @@ namespace LMS.Controllers
                                     where cl.Season == season
                                     where cl.Year == year
 
-                                    select e).FirstOrDefault();
+                                    select e);
+            
+            var classID = 
 
-            if (check_enrollment == null)
+                from cl in db.Classes
+                join co in db.Courses 
+                    on cl.CatalogId equals co.CatalogId
+                    
+                where co.SubjectAbb == subject
+                where co.CourseNumber == num.ToString()
+                where cl.Season == season
+                where cl.Year == year
+
+                select cl;
+
+            if (!check_enrollment.Any())
             {
                 Enrollment enrollStudent = new Enrollment();
 
                 enrollStudent.UId = uid;
                 //set grade to be equal to null that will look good in the table ( -- )
                 enrollStudent.Grade = "--";
-                enrollStudent.ClassId = check_enrollment.ClassId;
+                enrollStudent.ClassId = classID.FirstOrDefault().ClassId;
 
                 studentEnrolled = true;
 

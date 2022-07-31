@@ -146,9 +146,8 @@ namespace LMS.Models.LMSModels
                     .HasColumnName("classID");
 
                 entity.Property(e => e.CatalogId)
-                    .HasMaxLength(5)
-                    .HasColumnName("catalogID")
-                    .IsFixedLength();
+                    .HasColumnType("int(10) unsigned")
+                    .HasColumnName("catalogID");
 
                 entity.Property(e => e.EndTime)
                     .HasColumnType("time")
@@ -179,7 +178,7 @@ namespace LMS.Models.LMSModels
                     .WithMany(p => p.Classes)
                     .HasForeignKey(d => d.CatalogId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("Classes_Courses_catalogID_fk");
+                    .HasConstraintName("catID_fk");
 
                 entity.HasOne(d => d.ProfessorU)
                     .WithMany(p => p.Classes)
@@ -199,9 +198,9 @@ namespace LMS.Models.LMSModels
                     .IsUnique();
 
                 entity.Property(e => e.CatalogId)
-                    .HasMaxLength(5)
-                    .HasColumnName("catalogID")
-                    .IsFixedLength();
+                    .HasColumnType("int(10) unsigned")
+                    .ValueGeneratedNever()
+                    .HasColumnName("catalogID");
 
                 entity.Property(e => e.CourseName)
                     .HasMaxLength(100)
@@ -341,12 +340,18 @@ namespace LMS.Models.LMSModels
             {
                 entity.HasIndex(e => e.ClassId, "Submissions_ibfk_2");
 
+                entity.HasIndex(e => e.AssignmentId, "foreign_key_name");
+
                 entity.HasIndex(e => e.UId, "uID");
 
                 entity.Property(e => e.SubmissionId)
                     .HasColumnType("int(10) unsigned")
                     .ValueGeneratedNever()
                     .HasColumnName("submissionID");
+
+                entity.Property(e => e.AssignmentId)
+                    .HasColumnType("int(10) unsigned")
+                    .HasColumnName("assignmentID");
 
                 entity.Property(e => e.ClassId)
                     .HasColumnType("int(10) unsigned")
@@ -368,6 +373,12 @@ namespace LMS.Models.LMSModels
                     .HasMaxLength(8)
                     .HasColumnName("uID")
                     .IsFixedLength();
+
+                entity.HasOne(d => d.Assignment)
+                    .WithMany(p => p.Submissions)
+                    .HasForeignKey(d => d.AssignmentId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("Submissions_ibfk_3");
 
                 entity.HasOne(d => d.Class)
                     .WithMany(p => p.Submissions)

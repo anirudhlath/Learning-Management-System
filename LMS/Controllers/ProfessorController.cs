@@ -131,14 +131,7 @@ namespace LMS_CustomIdentity.Controllers
         /// 
         public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
         {
-            //var query_class = from co in db.Courses
-            //                  join cl in db.Classes
-            //                  on co.CatalogId equals cl.CatalogId
 
-            //                  where co.SubjectAbb == subject
-            //                  where co.CourseNumber == num.ToString()
-            //                  where cl.Season == season
-            //                  where cl.Year == year
 
             var query_class = (from cl in db.Classes
                 where cl.Season == season
@@ -150,17 +143,7 @@ namespace LMS_CustomIdentity.Controllers
                     classId = cl.ClassId
                 }).FirstOrDefault();
 
-            var query_course = (from co in db.Courses
-                where co.SubjectAbb == subject
-                where co.CourseNumber == num.ToString()
-                where co.CatalogId == query_class.catalogID
-
-                select new
-                {
-                    courseID = co.CatalogId
-                }).FirstOrDefault();
-
-            var query_student = from e in db.Enrollments
+            var query = from e in db.Enrollments
                 join s in db.Students
                     on e.UId equals s.UId
                 join u in db.Users
@@ -175,10 +158,9 @@ namespace LMS_CustomIdentity.Controllers
                     dob = u.Dob,
                     grade = e.Grade
                 };
+            
 
-            //var query_students = from 
-
-            return Json(query_student.ToArray());
+            return Json(query.ToArray());
         }
 
 
@@ -296,6 +278,7 @@ namespace LMS_CustomIdentity.Controllers
         /// 
         public IActionResult GetAssignmentCategories(string subject, int num, string season, int year, string category)
         {
+            Console.WriteLine("Getting assignment categories.");
             var query = from cl in db.Classes
 
                 join asscat in db.AssignmentCategories
@@ -304,11 +287,11 @@ namespace LMS_CustomIdentity.Controllers
                 join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
 
-                where co.SubjectAbb == subject
+                where co.SubjectAbb.ToLower() == subject.ToLower()
                 where co.CourseNumber == num.ToString()
                 where cl.Season == season
                 where cl.Year == year
-                where asscat.Name == category
+                where string.Equals(asscat.Name, category, StringComparison.CurrentCultureIgnoreCase)
 
                 select new
                 {
@@ -339,6 +322,10 @@ namespace LMS_CustomIdentity.Controllers
         public IActionResult CreateAssignmentCategory(string subject, int num, string season, int year,
             string category, int catweight)
         {
+            if (catweight is < 0 or > 100)
+            {
+                return Json(new { success = false });
+            }
 
             bool createdCategory = false;
 
@@ -384,12 +371,24 @@ namespace LMS_CustomIdentity.Controllers
                     {
                         cl.ClassId
                     };
+                
+                uint idCount = 1;
+
+
+                // Check if database has entries
+                if (db.AssignmentCategories.Any())
+                {
+                    var last = db.AssignmentCategories.OrderBy(u => u.CategoryId).Last(); // Check last entry
+                    var id = last.CategoryId;
+                    idCount += id;
+                }
 
                 AssignmentCategory newAssignCat = new AssignmentCategory();
 
                 newAssignCat.GradingWeight = (uint)catweight;
                 newAssignCat.Name = category;
                 newAssignCat.ClassId = class_query.First().ClassId;
+                newAssignCat.CategoryId = idCount;
 
                 db.AssignmentCategories.Add(newAssignCat);
                 db.SaveChanges();
@@ -440,31 +439,62 @@ namespace LMS_CustomIdentity.Controllers
                 where cl.Season == season
                 where cl.Year == year
                 where asscat.Name == category
+                where String.Equals(asgname, ass.Name, StringComparison.CurrentCultureIgnoreCase)
 
                 select new
                 {
-                    asgname = asscat.Name,
-                    asgpoints = ass.MaxPoints,
-                    asgdue = ass.DueDateTime,
-                    asgcontents = ass.Content
+                    catId = asscat.CategoryId
+                };
+            
+            var catIdQuery = from cl in db.Classes
+
+                join asscat in db.AssignmentCategories
+                    on cl.ClassId equals asscat.ClassId
+
+                join co in db.Courses
+                    on cl.CatalogId equals co.CatalogId
+                        
+
+                where co.SubjectAbb == subject
+                where co.CourseNumber == num.ToString()
+                where cl.Season == season
+                where cl.Year == year
+                where asscat.Name == category
+
+                select new
+                {
+                    catId = asscat.CategoryId
                 };
 
             //if assignment already exists
             if (query.Any())
             {
+                Console.WriteLine("Assignment already exists.");
                 // do nothing
                 createdAssignment = false;
             }
 
-            else
+            else if(catIdQuery.Any())
             {
-                Assignment newAssign = new Assignment
+                uint idCount = 1;
+
+
+                // Check if database has entries
+                if (db.Assignments.Any())
                 {
-                    Name = asgname,
-                    MaxPoints = (uint)asgpoints,
-                    DueDateTime = asgdue,
-                    Content = asgcontents
-                };
+                    var last = db.Assignments.OrderBy(u => u.AssignmentId).Last(); // Check last entry
+                    var id = last.AssignmentId;
+                    idCount += id;
+                }
+                
+
+                Assignment newAssign = new Assignment();
+                newAssign.Name = asgname;
+                newAssign.MaxPoints = (uint)asgpoints;
+                newAssign.DueDateTime = asgdue;
+                newAssign.Content = asgcontents;
+                newAssign.AssignmentId = idCount;
+                newAssign.CategoryId = catIdQuery.Last().catId;
                 
                 db.Assignments.Add(newAssign);
                 db.SaveChanges();
@@ -491,6 +521,11 @@ namespace LMS_CustomIdentity.Controllers
                 }
 
                 createdAssignment = true;
+            }
+            else
+            {
+                Console.WriteLine("Assignment Category '" + category + "' not found. Cannot create assignment.");
+                createdAssignment = false;
             }
             
 

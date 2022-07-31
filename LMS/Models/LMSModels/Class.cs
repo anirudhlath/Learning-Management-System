@@ -15,7 +15,7 @@ namespace LMS.Models.LMSModels
         public uint ClassId { get; set; }
         public string Season { get; set; } = null!;
         public uint Year { get; set; }
-        public string CatalogId { get; set; } = null!;
+        public uint CatalogId { get; set; }
         public string Location { get; set; } = null!;
         public TimeOnly StartTime { get; set; }
         public TimeOnly EndTime { get; set; }

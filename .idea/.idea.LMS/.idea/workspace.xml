@@ -6,12 +6,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b2108238-935f-484d-a4b4-af8ec1eec473" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.LMS/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.LMS/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Controllers/AdministratorController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Controllers/AdministratorController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Controllers/CommonController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Controllers/CommonController.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/LMS/Controllers/ProfessorController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Controllers/ProfessorController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Controllers/StudentController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Controllers/StudentController.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Models/LMSModels/Assignment.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Models/LMSModels/Assignment.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Models/LMSModels/Class.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Models/LMSModels/Class.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Models/LMSModels/Course.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Models/LMSModels/Course.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Models/LMSModels/Submission.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Models/LMSModels/Submission.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LMS/Models/LMSModels/lmsContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/LMS/Models/LMSModels/lmsContext.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/LMS/Program.cs" root0="FORCE_HIGHLIGHTING" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -75,6 +87,8 @@
       <workItem from="1659055500987" duration="3641000" />
       <workItem from="1659071111443" duration="85000" />
       <workItem from="1659124250350" duration="883000" />
+      <workItem from="1659223052952" duration="567000" />
+      <workItem from="1659223674307" duration="12933000" />
     </task>
     <servers />
   </component>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using NuGet.Protocol;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -34,7 +35,12 @@ namespace LMS.Controllers
         {
             Console.WriteLine("CommonController.cs: GetDepartments() called!");
             // CHECK:
-            var query = from d in db.Departments select d;
+            var query = from d in db.Departments
+                    select new
+                    {
+                        name = d.Name,
+                        subject = d.SubjectAbb
+                    };
                         
             return Json(query.ToArray());
         }
@@ -62,7 +68,12 @@ namespace LMS.Controllers
                 {
                     subject = d.SubjectAbb,
                     dname = d.Name,
-                    courses = db.Courses.Select(course => new {number = course.CourseNumber, cname = course.CourseName})
+                    courses = (from c in db.Courses where c.SubjectAbb == d.SubjectAbb
+                        select new
+                        {
+                            number = c.CourseNumber,
+                            cname = c.CourseName
+                        }).ToArray()
 
                 };
             return Json(query.ToArray());
@@ -99,8 +110,8 @@ namespace LMS.Controllers
                     season = c.Season,
                     year = c.Year,
                     location = c.Location,
-                    start = c.StartTime,
-                    end = c.EndTime,
+                    start = c.StartTime.ToString(),
+                    end = c.EndTime.ToString(),
                     fname = u.FirstName,
                     lname = u.LastName
                 };
@@ -191,50 +202,60 @@ namespace LMS.Controllers
         public IActionResult GetUser(string uid)
         {
             Console.WriteLine("CommonController.cs: GetUser() called!");
-            if (db.Students.Find(uid) != null)
+            try
             {
-                var query = from u in db.Users
-                    join s in db.Students on u.UId equals s.UId
-                    join d in db.Departments on s.Major equals d.SubjectAbb
-                    where s.UId == uid
-                    select new
-                    {
-                        fname = u.FirstName,
-                        lname = u.LastName,
-                        uid = u.UId,
-                        department = d.Name
-                    };
-                return Json(query.First());
-            }
+                if (db.Students.Find(uid) != null)
+                {
+                    Console.WriteLine("CommonController.cs: GetUser() called! Found Student!");
+                    var query = from u in db.Users
+                        join s in db.Students on u.UId equals s.UId
+                        join d in db.Departments on s.Major equals d.SubjectAbb
+                        where s.UId == uid
+                        select new
+                        {
+                            fname = u.FirstName,
+                            lname = u.LastName,
+                            uid = u.UId,
+                            department = d.Name
+                        };
+                    return Json(query.First());
+                }
             
-            if (db.Professors.Find(uid) != null)
-            {
-                var query = from u in db.Users
-                    join p in db.Professors on u.UId equals p.UId
-                    join d in db.Departments on p.SubjectAbb equals d.SubjectAbb
-                    where p.UId == uid
-                    select new
-                    {
-                        fname = u.FirstName,
-                        lname = u.LastName,
-                        uid = u.UId,
-                        department = d.Name
-                    };
-                return Json(query.First());
-            }
+                if (db.Professors.Find(uid) != null)
+                {
+                    Console.WriteLine("CommonController.cs: GetUser() called! Found Professor!");
+                    var query = from u in db.Users
+                        join p in db.Professors on u.UId equals p.UId
+                        join d in db.Departments on p.SubjectAbb equals d.SubjectAbb
+                        where p.UId == uid
+                        select new
+                        {
+                            fname = u.FirstName,
+                            lname = u.LastName,
+                            uid = u.UId,
+                            department = d.Name
+                        };
+                    return Json(query.First());
+                }
             
-            if (db.Administrators.Find(uid) != null)
+                if (db.Administrators.Find(uid) != null)
+                {
+                    Console.WriteLine("CommonController.cs: GetUser() called! Found Admin!");
+                    var query = from u in db.Users
+                        join a in db.Administrators on u.UId equals a.UId
+                        where a.UId == uid
+                        select new
+                        {
+                            fname = u.FirstName,
+                            lname = u.LastName,
+                            uid = u.UId
+                        };
+                    return Json(query.First());
+                }
+            }
+            catch (Exception e)
             {
-                var query = from u in db.Users
-                    join a in db.Administrators on u.UId equals a.UId
-                    where a.UId == uid
-                    select new
-                    {
-                        fname = u.FirstName,
-                        lname = u.LastName,
-                        uid = u.UId
-                    };
-                return Json(query.First());
+                // Silence unnecessary exceptions that do not matter.
             }
             
             return Json(new { success = false });

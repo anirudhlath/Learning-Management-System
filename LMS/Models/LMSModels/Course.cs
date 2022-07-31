@@ -12,7 +12,7 @@ namespace LMS.Models.LMSModels
 
         public string CourseName { get; set; } = null!;
         public string CourseNumber { get; set; } = null!;
-        public string CatalogId { get; set; } = null!;
+        public uint CatalogId { get; set; }
         public string SubjectAbb { get; set; } = null!;
 
         public virtual Department SubjectAbbNavigation { get; set; } = null!;

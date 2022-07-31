@@ -65,8 +65,9 @@ namespace LMS.Controllers
             foreach (var departments in query)
             {
                 //Check if Department already exists
-                if (departments.SubjectAbb == subject && departments.Name == name)
+                if (departments.SubjectAbb == subject || departments.Name == name)
                 {
+                    Console.WriteLine("Department already exists.");
                     // Department already exists
                     newDepartment = false;
                 }
@@ -130,16 +131,14 @@ namespace LMS.Controllers
         public IActionResult GetProfessors(string subject)
         {
             var query = from p in db.Professors
-                        //where p.SubjectAbbs.Any(dept => dept.Name == subject)
-                        join u in db.Users on p.UId equals u.UId
-                        into leftSide
-
-                        from l in leftSide
+                //where p.SubjectAbbs.Any(dept => dept.Name == subject)
+                join u in db.Users on p.UId equals u.UId
+                where p.SubjectAbb == subject
                         select new
                         {
-                            lname = l.LastName,
-                            fname = l.FirstName,
-                            uid = l.UId
+                            lname = u.LastName,
+                            fname = u.FirstName,
+                            uid = u.UId
                         };
 
             return Json(query.ToArray());
@@ -162,7 +161,14 @@ namespace LMS.Controllers
         /// 
         public IActionResult CreateCourse(string subject, int number, string name)
         {
+            
             bool newCourse = true;
+            
+            if (number is < 1000 or > 9999)
+            {
+                newCourse = false;
+
+            }
 
             var query = from c in db.Courses select c;
 
@@ -176,27 +182,37 @@ namespace LMS.Controllers
                 }
             }
 
-            uint num = 1;
+
+            uint catIdCount = 1;
 
 
             // Check if database has entries
             if (db.Courses.Any())
             {
-                //TODO : 
                 var last = db.Courses.OrderBy(u => u.CatalogId).Last(); // Check last entry
-                var id = int.Parse(last.CatalogId);
-
-                num += id;
+                var id = last.CatalogId;
+                catIdCount += id;
             }
+
+
 
             if (newCourse)
             {
-                Course course = new Course();
-                course.SubjectAbb = subject;
-                course.CourseName = name;
+                try
+                {
+                    Course course = new Course();
+                    course.SubjectAbb = subject;
+                    course.CourseName = name;
+                    course.CatalogId = catIdCount;
+                    course.CourseNumber = number.ToString();
 
-                db.Courses.Add(course);
-                db.SaveChanges();
+                    db.Courses.Add(course);
+                    db.SaveChanges();
+                }
+                catch (Exception e)
+                {
+                    newCourse = false;
+                }
             }
 
             return Json(new { success = newCourse });
@@ -227,6 +243,12 @@ namespace LMS.Controllers
         {
             bool addClassToDB = true;
 
+            if (year is < 1 or > 9999)
+            {
+                addClassToDB = false;
+                return Json(new { success = addClassToDB });
+            }
+
             var query = from cl in db.Classes select cl;
 
             var catalogID = (from co in db.Courses
@@ -234,21 +256,45 @@ namespace LMS.Controllers
                              where co.CourseNumber == number.ToString()
                              select co.CatalogId).FirstOrDefault();
 
-            foreach (var cl in query)
+            // Console.WriteLine("Checking if input details are valid.");
+            if (query.Any())
             {
-                if (
-                    // Class has a clashing location
-                    (cl.Location.Equals(location) && TimeSpan.Compare(cl.StartTime.ToTimeSpan(), start.TimeOfDay) >= 0 &&
-                    TimeSpan.Compare(cl.StartTime.ToTimeSpan(), end.TimeOfDay) <= 0 && cl.Season.Equals(season))
-                    ||
-                    // Class has already been defined
-                    (cl.Season.Equals(season) && cl.CatalogId == catalogID)
-                )
+                foreach (var cl in query)
                 {
-                    // Class already exists
-                    addClassToDB = false;
+
+                    if (
+                        // Class has a clashing location
+                        (cl.Location.Equals(location) &&
+                         TimeSpan.Compare(cl.StartTime.ToTimeSpan(), start.TimeOfDay) >= 0 &&
+                         TimeSpan.Compare(cl.StartTime.ToTimeSpan(), end.TimeOfDay) <= 0 && cl.Season.Equals(season) &&
+                         cl.Year == year &&
+                         cl.Season == season)
+                        ||
+                        // Class has already been defined, but why arent we allowed to have multiple class offerings of the same course in the same semester?
+                        (cl.Season == season && cl.Year == year && cl.CatalogId == catalogID)
+                    )
+                    {
+                        Console.WriteLine("Cannot add class.");
+                        // Class already exists
+                        addClassToDB = false;
+                    }
                 }
             }
+            
+
+            
+            uint idCount = 1;
+
+
+            // Check if database has entries
+            if (db.Classes.Any())
+            {
+                var last = db.Classes.OrderBy(u => u.ClassId).Last(); // Check last entry
+                var id = last.ClassId;
+                idCount += id;
+            }
+            
+
 
             if (addClassToDB)
             {
@@ -260,6 +306,9 @@ namespace LMS.Controllers
                 new_class.Season = season;
                 new_class.Year = (uint) year;
                 new_class.CatalogId = catalogID;
+                new_class.ClassId = idCount;
+                new_class.ProfessorUId = instructor;
+
 
                 db.Classes.Add(new_class);
                 db.SaveChanges();
