@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.VisualBasic;
 
@@ -17,7 +18,6 @@ namespace LMS_CustomIdentity.Controllers
     [Authorize(Roles = "Professor")]
     public class ProfessorController : Controller
     {
-
         //If your context is named something else, fix this
         //and the constructor param
         private readonly LMSContext db;
@@ -131,12 +131,9 @@ namespace LMS_CustomIdentity.Controllers
         /// 
         public IActionResult GetStudentsInClass(string subject, int num, string season, int year)
         {
-
-
             var query_class = (from cl in db.Classes
                 where cl.Season == season
                 where cl.Year == year
-
                 select new
                 {
                     catalogID = cl.CatalogId,
@@ -149,7 +146,6 @@ namespace LMS_CustomIdentity.Controllers
                 join u in db.Users
                     on s.UId equals u.UId
                 where e.ClassId == query_class.classId
-
                 select new
                 {
                     fname = u.FirstName,
@@ -158,11 +154,10 @@ namespace LMS_CustomIdentity.Controllers
                     dob = u.Dob,
                     grade = e.Grade
                 };
-            
+
 
             return Json(query.ToArray());
         }
-
 
 
         /// <summary>
@@ -191,69 +186,56 @@ namespace LMS_CustomIdentity.Controllers
         /// 
         public IActionResult GetAssignmentsInCategory(string subject, int num, string season, int year, string category)
         {
-            var queryAssignCat = from cl in db.Classes
-
-                join co in db.Courses
-                    on cl.CatalogId equals co.CatalogId
-
-                join asscat in db.AssignmentCategories
-                    on cl.ClassId equals asscat.ClassId
-
-                join ass in db.Assignments
-                    on asscat.CategoryId equals ass.CategoryId
-
-                join sub in db.Submissions
-                    on cl.ClassId equals sub.ClassId
-
-                where co.SubjectAbb == subject
-                where co.CourseNumber == num.ToString()
-                where cl.Season == season
-                where cl.Year == year
-                where asscat.Name == category
-
-                select new
-                {
-                    aname = ass.Name,
-                    cname = asscat.Name,
-                    due = ass.DueDateTime,
-                    //CHECK: submissions count
-                    //submissions = 
-                };
-
+            Console.WriteLine("Getting assignments in category.");
             if (category == null)
             {
+                Console.WriteLine("Category was null.");
                 var query = from cl in db.Classes
-
                     join co in db.Courses
                         on cl.CatalogId equals co.CatalogId
-
                     join asscat in db.AssignmentCategories
                         on cl.ClassId equals asscat.ClassId
-
                     join ass in db.Assignments
                         on asscat.CategoryId equals ass.CategoryId
-
-                    join sub in db.Submissions
-                        on cl.ClassId equals sub.ClassId
-
                     where co.SubjectAbb == subject
                     where co.CourseNumber == num.ToString()
                     where cl.Season == season
                     where cl.Year == year
-
                     select new
                     {
                         aname = ass.Name,
                         cname = asscat.Name,
                         due = ass.DueDateTime,
-                        //CHECK: submissions count
-                        //submissions = 
+                        submissions = ass.Submissions.Count()
                     };
 
                 return Json(query.ToArray());
             }
+            Console.WriteLine("Category: " + category);
+            
+            var CategoryNotNullQ = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CatalogId equals co.CatalogId
+                join asscat in db.AssignmentCategories
+                    on cl.ClassId equals asscat.ClassId
+                join ass in db.Assignments
+                    on asscat.CategoryId equals ass.CategoryId
+                where co.SubjectAbb == subject
+                where co.CourseNumber == num.ToString()
+                where cl.Season == season
+                where cl.Year == year
+                where asscat.Name == category
+                select new
+                {
+                    aname = ass.Name,
+                    cname = asscat.Name,
+                    due = ass.DueDateTime,
+                    submissions = ass.Submissions.Count()
+                };
 
-            return Json(queryAssignCat.ToArray());
+           
+
+            return Json(CategoryNotNullQ.ToArray());
         }
 
 
@@ -280,28 +262,47 @@ namespace LMS_CustomIdentity.Controllers
         {
             // TODO: Fix this, and continue adding categories to test the rest of the program.
             Console.WriteLine("Getting assignment categories.");
-
-            var query = from cl in db.Classes
-
-                join asscat in db.AssignmentCategories
-                    on cl.ClassId equals asscat.ClassId
-
-                join co in db.Courses
-                    on cl.CatalogId equals co.CatalogId
-
-                where co.SubjectAbb == subject
-                where co.CourseNumber == num.ToString()
-                where cl.Season == season
-                where cl.Year == year
+            if (category == null)
+            {
+              var  query = from cl in db.Classes
+                    join asscat in db.AssignmentCategories
+                        on cl.ClassId equals asscat.ClassId
+                    join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+                    where co.SubjectAbb == subject
+                    where co.CourseNumber == num.ToString()
+                    where cl.Season == season
+                    where cl.Year == year
                 
+                    select new
+                    {
+                        name = asscat.Name,
+                        weight = asscat.GradingWeight
+                    };
+              return Json(query.ToArray());
+            }
+            else
+            {
+                var  query = from cl in db.Classes
+                    join asscat in db.AssignmentCategories
+                        on cl.ClassId equals asscat.ClassId
+                    join co in db.Courses
+                        on cl.CatalogId equals co.CatalogId
+                    where co.SubjectAbb == subject
+                    where co.CourseNumber == num.ToString()
+                    where cl.Season == season
+                    where cl.Year == year
+                    where asscat.Name == category
+                
+                    select new
+                    {
+                        name = asscat.Name,
+                        weight = asscat.GradingWeight
+                    };
+                return Json(query.ToArray());
+            }
 
-                select new
-                {
-                    name = asscat.Name,
-                    weight = asscat.GradingWeight
-                };
-
-            return Json(query.ToArray());
+            
         }
 
         /// <summary>
@@ -332,20 +333,16 @@ namespace LMS_CustomIdentity.Controllers
             bool createdCategory = false;
 
             var query = from cl in db.Classes
-
                 join asscat in db.AssignmentCategories
                     on cl.ClassId equals asscat.ClassId
-
                 join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
-
                 where co.SubjectAbb == subject
                 where co.CourseNumber == num.ToString()
                 where cl.Season == season
                 where cl.Year == year
                 where asscat.Name == category
                 where asscat.GradingWeight == catweight
-
                 select new
                 {
                     weight = asscat.GradingWeight,
@@ -357,7 +354,6 @@ namespace LMS_CustomIdentity.Controllers
             {
                 // do nothing
                 createdCategory = false;
-
             }
 
             else
@@ -373,7 +369,7 @@ namespace LMS_CustomIdentity.Controllers
                     {
                         cl.ClassId
                     };
-                
+
                 uint idCount = 1;
 
 
@@ -426,43 +422,33 @@ namespace LMS_CustomIdentity.Controllers
             bool createdAssignment = false;
 
             var query = from cl in db.Classes
-
                 join asscat in db.AssignmentCategories
                     on cl.ClassId equals asscat.ClassId
-
                 join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
-
                 join ass in db.Assignments
                     on asscat.CategoryId equals ass.CategoryId
-
                 where co.SubjectAbb == subject
                 where co.CourseNumber == num.ToString()
                 where cl.Season == season
                 where cl.Year == year
                 where asscat.Name == category
                 where ass.Name == asgname
-
                 select new
                 {
                     catId = asscat.CategoryId
                 };
-            
-            var catIdQuery = from cl in db.Classes
 
+            var catIdQuery = from cl in db.Classes
                 join asscat in db.AssignmentCategories
                     on cl.ClassId equals asscat.ClassId
-
                 join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
-                        
-
                 where co.SubjectAbb == subject
                 where co.CourseNumber == num.ToString()
                 where cl.Season == season
                 where cl.Year == year
                 where asscat.Name == category
-
                 select new
                 {
                     catId = asscat.CategoryId
@@ -476,7 +462,7 @@ namespace LMS_CustomIdentity.Controllers
                 createdAssignment = false;
             }
 
-            else if(catIdQuery.Any())
+            else if (catIdQuery.Any())
             {
                 uint idCount = 1;
 
@@ -488,7 +474,7 @@ namespace LMS_CustomIdentity.Controllers
                     var id = last.AssignmentId;
                     idCount += id;
                 }
-                
+
 
                 Assignment newAssign = new Assignment();
                 newAssign.Name = asgname;
@@ -497,10 +483,10 @@ namespace LMS_CustomIdentity.Controllers
                 newAssign.Content = asgcontents;
                 newAssign.AssignmentId = idCount;
                 newAssign.CategoryId = catIdQuery.FirstOrDefault()!.catId;
-                
+
                 db.Assignments.Add(newAssign);
                 db.SaveChanges();
-                
+
                 // UPDATE GRADES OF ALL STUDENTS WHICH THIS ASSIGNMENT AFFECTS
                 var update = from e in db.Enrollments
                     join c in db.Classes on e.ClassId equals c.ClassId
@@ -509,7 +495,6 @@ namespace LMS_CustomIdentity.Controllers
                     where co.CourseNumber == num.ToString()
                     where c.Season == season
                     where c.Year == year
-
                     select new
                     {
                         uId = e.UId,
@@ -517,10 +502,17 @@ namespace LMS_CustomIdentity.Controllers
                         grade = e.Grade
                     };
 
+                var temp = new List<string>();
                 foreach (var student in update)
                 {
-                    Autograder(student.uId, subject, num, season, year, category, asgname);
+                    temp.Add(student.uId);
                 }
+
+                foreach (var student in temp)
+                {
+                    AutoGrader(student, subject, num, season, year);
+                }
+
 
                 createdAssignment = true;
             }
@@ -529,7 +521,7 @@ namespace LMS_CustomIdentity.Controllers
                 Console.WriteLine("Assignment Category '" + category + "' not found. Cannot create assignment.");
                 createdAssignment = false;
             }
-            
+
 
             return Json(new { success = createdAssignment });
         }
@@ -565,7 +557,6 @@ namespace LMS_CustomIdentity.Controllers
                 where year == c.Year
                 where category == cat.Name
                 where asgname == a.Name
-
                 select new
                 {
                     subject = co.SubjectAbb,
@@ -606,16 +597,12 @@ namespace LMS_CustomIdentity.Controllers
             var query = from ass in db.Assignments
                 join asscat in db.AssignmentCategories
                     on ass.CategoryId equals asscat.CategoryId
-
                 join cl in db.Classes
                     on asscat.ClassId equals cl.ClassId
-
                 join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
-
                 join sub in db.Submissions
                     on cl.ClassId equals sub.ClassId
-
                 where co.SubjectAbb == subject
                 where co.CourseNumber == num.ToString()
                 where cl.Season == season
@@ -623,18 +610,17 @@ namespace LMS_CustomIdentity.Controllers
                 where asscat.Name == category
                 where ass.Name == asgname
                 where sub.UId == uid
-
                 select sub;
 
             foreach (var q in query)
             {
                 q.Score = (uint)score;
             }
-            
+
             gradeSubmitted = true;
             db.SaveChanges();
 
-            Autograder(uid, subject, num, season, year, category, asgname);
+            AutoGrader(uid, subject, num, season, year);
 
             return Json(new { success = gradeSubmitted });
         }
@@ -656,7 +642,6 @@ namespace LMS_CustomIdentity.Controllers
             var query = from c in db.Classes
                 join co in db.Courses on c.CatalogId equals co.CatalogId
                 where c.ProfessorUId == uid
-
                 select new
                 {
                     subject = co.SubjectAbb,
@@ -681,12 +666,35 @@ namespace LMS_CustomIdentity.Controllers
         ///
         /// "asgpoints" - The max point value for the new assignment
         /// 
-        private void Autograder(string uid, string subject, int num, string season, int year,
-            string category, string asgname)
+        private void AutoGrader(string uid, string subject, int num, string season, int year)
         {
             Console.WriteLine("Auto grading.");
 
-            var query =  from asscat in db.AssignmentCategories
+            var query = from cl in db.Classes
+                join co in db.Courses on cl.CatalogId equals co.CatalogId
+                join cat in db.AssignmentCategories on cl.ClassId equals cat.CategoryId
+                where subject == co.SubjectAbb
+                where num.ToString() == co.CourseNumber
+                where season == cl.Season
+                where year == cl.Year
+                select new
+                {
+                    classId = cl.ClassId,
+                    categoryId = cat.CategoryId,
+                    categoryWeight = cat.GradingWeight,
+                    assignments = (from a in db.Assignments
+                        join s in db.Submissions on a.AssignmentId equals s.AssignmentId
+                        where a.CategoryId == cat.CategoryId
+                        where s.UId == uid
+                        select new
+                        {
+                            maxScore = a.MaxPoints,
+                            score = s.Score
+                        }).ToList()
+                };
+
+
+            /*var query =  from asscat in db.AssignmentCategories
 
                 join cl in db.Classes
                     on asscat.ClassId equals cl.ClassId
@@ -715,13 +723,34 @@ namespace LMS_CustomIdentity.Controllers
                             max_score = ass.MaxPoints,
                             score = sub.Score
                         }).ToArray()
-                };
+                };*/
 
-            int weight_total = 0;
+            int totalWeight = 0;
             double percent = 0.0;
 
+            foreach (var cat in query)
+            {
+                int totalMaxScore = 0;
+                int totalScore = 0;
 
-            foreach (var assignment_category in query)
+                foreach (var a in cat.assignments)
+                {
+                    totalMaxScore += (int)a.maxScore;
+                    totalScore += (int)a.score;
+                }
+
+                if (totalMaxScore == 0)
+                {
+                    continue;
+                }
+
+
+                totalWeight += (int)cat.categoryWeight;
+                percent += ((double)totalScore / totalMaxScore) * cat.categoryWeight;
+            }
+
+
+            /*foreach (var assignment_category in query)
             {
                 Console.WriteLine("Iterating over query...");
                 int points_total = 0;
@@ -740,13 +769,41 @@ namespace LMS_CustomIdentity.Controllers
                 }
 
                 percent += ((double)points_total / max_points) * assignment_category.category_weight;
-                weight_total += (int)assignment_category.category_weight;
+                totalWeight += (int)assignment_category.category_weight;
+            }*/
+
+            var totalGrade = CalculateGrade(totalWeight, percent);
+
+
+            var queryEnrolled = from en in db.Enrollments
+                join cl in db.Classes
+                    on en.ClassId equals cl.ClassId
+                join co in db.Courses
+                    on cl.CatalogId equals co.CatalogId
+                where co.SubjectAbb == subject
+                where cl.Season == season
+                where cl.Year == year
+                where co.CourseNumber == num.ToString()
+                where en.UId == uid
+                select en;
+
+            foreach (var enrollment in queryEnrolled)
+            {
+                enrollment.Grade = totalGrade;
             }
 
+            db.SaveChanges();
+
+            Console.WriteLine("Auto graded.");
+        }
+
+        private static string CalculateGrade(int weight_total, double percent)
+        {
+            Console.WriteLine("Calculating grade.");
             double scaling_factor = 100 / (double)weight_total;
             double percentGrade = percent * scaling_factor;
 
-            string totalGrade = "";
+            string totalGrade = "--";
 
             if (percentGrade >= 92)
             {
@@ -808,33 +865,11 @@ namespace LMS_CustomIdentity.Controllers
                 totalGrade = "E";
             }
 
+            Console.WriteLine("Calculated grade: " + totalGrade);
 
-            var querry_enrolled = from en in db.Enrollments
-                join cl in db.Classes
-                    on en.ClassId equals cl.ClassId
-
-                join co in db.Courses
-                    on cl.CatalogId equals co.CatalogId
-
-                where co.SubjectAbb == subject
-                where cl.Season == season
-                where cl.Year == year
-                where co.CourseNumber == num.ToString()
-                where en.UId == uid
-
-                select en;
-
-            foreach (var enrollment in querry_enrolled)
-            {
-                enrollment.Grade = totalGrade;
-            }
-
-            db.SaveChanges();
-            
-            Console.WriteLine("Auto graded.");
+            return totalGrade;
         }
 
         /*******End code to modify********/
     }
 }
-

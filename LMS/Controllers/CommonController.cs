@@ -146,7 +146,7 @@ namespace LMS.Controllers
                 where category == cat.Name
                 where asgname == asg.Name
                 select asg.Content;
-            return Content(query.LastOrDefault() ?? "");
+            return Content(query.FirstOrDefault() ?? "");
         }
 
 
