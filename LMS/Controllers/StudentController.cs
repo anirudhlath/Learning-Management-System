@@ -135,17 +135,17 @@ namespace LMS.Controllers
                         join co in db.Courses on c.CatalogId equals co.CatalogId
                         join e in db.Enrollments on c.ClassId equals e.ClassId
                         where co.CourseNumber == num.ToString()
-                        where string.Equals(c.Season, season, StringComparison.CurrentCultureIgnoreCase)
+                        where c.Season == season
                         where c.Year == year
-                        where string.Equals(e.UId.ToLower(), uid.ToLower(), StringComparison.CurrentCultureIgnoreCase)
-                        where string.Equals(co.SubjectAbb.ToLower(), subject.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                        where e.UId == uid
+                        where co.SubjectAbb == subject
                         select new
                         {
                             aname = ass.Name,
                             cname = asc.Name,
                             due = ass.DueDateTime,
                             score = from sub in db.Submissions
-                                    where string.Equals(sub.UId.ToLower(), uid.ToLower(), StringComparison.CurrentCultureIgnoreCase)
+                                    where sub.UId == uid
                                     where c.ClassId == sub.ClassId
                                     select sub.Score
                         };

@@ -280,6 +280,7 @@ namespace LMS_CustomIdentity.Controllers
         {
             // TODO: Fix this, and continue adding categories to test the rest of the program.
             Console.WriteLine("Getting assignment categories.");
+
             var query = from cl in db.Classes
 
                 join asscat in db.AssignmentCategories
@@ -288,11 +289,11 @@ namespace LMS_CustomIdentity.Controllers
                 join co in db.Courses
                     on cl.CatalogId equals co.CatalogId
 
-                where co.SubjectAbb.ToLower() == subject.ToLower()
+                where co.SubjectAbb == subject
                 where co.CourseNumber == num.ToString()
                 where cl.Season == season
                 where cl.Year == year
-                where string.Equals(asscat.Name, category, StringComparison.CurrentCultureIgnoreCase)
+                
 
                 select new
                 {
@@ -440,7 +441,7 @@ namespace LMS_CustomIdentity.Controllers
                 where cl.Season == season
                 where cl.Year == year
                 where asscat.Name == category
-                where String.Equals(asgname, ass.Name, StringComparison.CurrentCultureIgnoreCase)
+                where ass.Name == asgname
 
                 select new
                 {
@@ -495,7 +496,7 @@ namespace LMS_CustomIdentity.Controllers
                 newAssign.DueDateTime = asgdue;
                 newAssign.Content = asgcontents;
                 newAssign.AssignmentId = idCount;
-                newAssign.CategoryId = catIdQuery.Last().catId;
+                newAssign.CategoryId = catIdQuery.FirstOrDefault()!.catId;
                 
                 db.Assignments.Add(newAssign);
                 db.SaveChanges();
@@ -683,8 +684,9 @@ namespace LMS_CustomIdentity.Controllers
         private void Autograder(string uid, string subject, int num, string season, int year,
             string category, string asgname)
         {
+            Console.WriteLine("Auto grading.");
 
-            var query = from asscat in db.AssignmentCategories
+            var query =  from asscat in db.AssignmentCategories
 
                 join cl in db.Classes
                     on asscat.ClassId equals cl.ClassId
@@ -700,7 +702,7 @@ namespace LMS_CustomIdentity.Controllers
                 select new
                 {
                     category_weight = asscat.GradingWeight,
-                    assignments = from ass in db.Assignments
+                    assignments = (from ass in db.Assignments
                         join cat in db.AssignmentCategories on ass.CategoryId equals cat.CategoryId
                         join c in db.Classes on cat.ClassId equals c.ClassId
                         join sub in db.Submissions on c.ClassId equals sub.ClassId
@@ -712,7 +714,7 @@ namespace LMS_CustomIdentity.Controllers
                         {
                             max_score = ass.MaxPoints,
                             score = sub.Score
-                        }
+                        }).ToArray()
                 };
 
             int weight_total = 0;
@@ -721,11 +723,13 @@ namespace LMS_CustomIdentity.Controllers
 
             foreach (var assignment_category in query)
             {
+                Console.WriteLine("Iterating over query...");
                 int points_total = 0;
                 int max_points = 0;
 
                 foreach (var assignment in assignment_category.assignments)
                 {
+                    Console.WriteLine("Iterating over assignments...");
                     points_total += (int)assignment.score;
                     max_points += (int)assignment.max_score;
                 }
@@ -826,6 +830,8 @@ namespace LMS_CustomIdentity.Controllers
             }
 
             db.SaveChanges();
+            
+            Console.WriteLine("Auto graded.");
         }
 
         /*******End code to modify********/
