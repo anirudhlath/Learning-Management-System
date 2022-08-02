@@ -129,34 +129,44 @@ namespace LMS.Controllers
         /// 
         public IActionResult GetAssignmentsInClass(string subject, int num, string season, int year, string uid)
         {
-            var query = from c in db.Classes
-                        join asc in db.AssignmentCategories on c.ClassId equals asc.ClassId
-                        join ass in db.Assignments on asc.CategoryId equals ass.CategoryId
-                        join co in db.Courses on c.CatalogId equals co.CatalogId
-                        join e in db.Enrollments on c.ClassId equals e.ClassId
-                        where co.CourseNumber == num.ToString()
-                        where c.Season == season
-                        where c.Year == year
-                        where e.UId == uid
-                        where co.SubjectAbb == subject
-                        select new
-                        {
-                            aname = ass.Name,
-                            cname = asc.Name,
-                            due = ass.DueDateTime,
-                            score = from sub in db.Submissions
-                                    where sub.UId == uid
-                                    where c.ClassId == sub.ClassId
-                                    select sub.Score
-                        };
+            var query = from cl in db.Classes
+                join cat in db.AssignmentCategories
+                    on cl.ClassId equals cat.ClassId
+                join a in db.Assignments
+                    on cat.CategoryId equals a.CategoryId
+                join co in db.Courses
+                    on cl.CatalogId equals co.CatalogId
+                where cl.Season == season
+                where cl.Year == year
+                where co.SubjectAbb == subject
+                where co.CourseNumber == num.ToString()
+                
+                select new
+                {
+                    aname = a.Name,
+                    cname = cat.Name,
+                    due = a.DueDateTime,
+                    score = (from s in db.Submissions
+                        where s.UId == uid
+                        where s.AssignmentId == a.AssignmentId
+                        select s.Score).ToList()
+                };
 
             var result = new List<object>();
-            foreach (var assignment in query)
+            foreach (var q in query)
             {
-                result.Add(new { assignment.aname, assignment.cname, assignment.due, score = (assignment.score.Any() ? assignment.score : null) });
+                result.Add(
+                    new
+                    {
+                        q.aname,
+                        q.cname,
+                        q.due,
+                        score = (q.score.Any()) ? q.score : null
+                    }
+                );
             }
 
-            return Json(result);
+            return Json(query.ToArray());
         }
 
 

@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using LMS.Models.LMSModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.VisualBasic.Syntax;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using NuGet.Protocol;
 
@@ -60,6 +61,7 @@ namespace LMS.Controllers
         /// <returns>The JSON array</returns>
         public IActionResult GetCatalog()
         {
+            // TODO: Fix repeating
             Console.WriteLine("CommonController.cs: GetCatalog() called!");
             var query = from d in db.Departments
                         join co in db.Courses 
@@ -68,12 +70,12 @@ namespace LMS.Controllers
                 {
                     subject = d.SubjectAbb,
                     dname = d.Name,
-                    courses = (from c in db.Courses where c.SubjectAbb == d.SubjectAbb
+                    courses = (from c in d.Courses where c.SubjectAbb == d.SubjectAbb
                         select new
                         {
                             number = c.CourseNumber,
                             cname = c.CourseName
-                        }).ToArray()
+                        }).ToList()
 
                 };
             return Json(query.ToArray());
@@ -134,9 +136,9 @@ namespace LMS.Controllers
         {
             Console.WriteLine("CommonController.cs: GetAssignmentContents() called!");
             // CHECK: Remove submissions join
-            var query = from s in db.Submissions
-                join c in db.Classes on s.ClassId equals c.ClassId
-                join cat in db.AssignmentCategories on s.ClassId equals cat.ClassId
+            var query = 
+                from c in db.Classes
+                join cat in db.AssignmentCategories on c.ClassId equals cat.ClassId
                 join co in db.Courses on c.CatalogId equals co.CatalogId
                 join asg in db.Assignments on cat.CategoryId equals asg.CategoryId
                 where subject == co.SubjectAbb
@@ -167,19 +169,25 @@ namespace LMS.Controllers
         public IActionResult GetSubmissionText(string subject, int num, string season, int year, string category, string asgname, string uid)
         {
             Console.WriteLine("CommonController.cs: GetSubmissionText() called!");
-            var query = from s in db.Submissions
-                join c in db.Classes on s.ClassId equals c.ClassId
-                join cat in db.AssignmentCategories on s.ClassId equals cat.ClassId
-                join co in db.Courses on c.CatalogId equals co.CatalogId
-                join asg in db.Assignments on cat.CategoryId equals asg.CategoryId
-                where subject == co.SubjectAbb
-                where num.ToString() == co.CourseNumber
-                where season == c.Season
-                where year == c.Year
-                where category == cat.Name
-                where asgname == asg.Name
+            Console.WriteLine(asgname);
+            var query = from cl in db.Classes
+                join co in db.Courses
+                    on cl.CatalogId equals co.CatalogId
+                join cat in db.AssignmentCategories
+                    on cl.ClassId equals cat.ClassId
+                join a in db.Assignments
+                    on cat.CategoryId equals a.CategoryId
+                join s in db.Submissions
+                    on a.AssignmentId equals s.AssignmentId
+                where co.SubjectAbb == subject
+                where co.CourseNumber == num.ToString()
+                where cl.Season == season
+                where cl.Year == year
+                where cat.Name == category
+                where a.Name == asgname
+                where s.UId == uid
                 select s.SubmissionContents;
-            return Content(query.LastOrDefault() ?? "");
+            return Content(query.FirstOrDefault() ?? "");
         }
 
 
